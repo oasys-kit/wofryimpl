@@ -62,7 +62,7 @@ class WOBeamline(Beamline):
             text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fresnel_zoom_scaling_theorem import FresnelZoomScaling1D"
         elif self.get_light_source().get_dimension() == 2:
             text_code += "\n\nfrom wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D"
-            text_code += "\n\nfrom wofry.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D"
+            text_code += "\n\nfrom wofryimpl.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D"
             text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fresnel import Fresnel2D"
             text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fresnel_convolution import FresnelConvolution2D"
             text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fraunhofer import Fraunhofer2D"
