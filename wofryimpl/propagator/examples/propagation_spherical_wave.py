@@ -1,16 +1,17 @@
 
 import numpy
 
-from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
-from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
-from wofry.propagator.propagators2D.fresnel import Fresnel2D
-from wofry.propagator.propagators2D.fresnel_convolution import FresnelConvolution2D
-from wofry.propagator.propagators2D.fraunhofer import Fraunhofer2D
-from wofry.propagator.propagators2D.integral import Integral2D
-from wofry.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D
-from wofry.beamline.optical_elements.ideal_elements.screen import WOScreen
 from syned.beamline.element_coordinates import ElementCoordinates
 from syned.beamline.beamline_element import BeamlineElement
+
+from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
+from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
+from wofryimpl.propagator.propagators2D.fresnel import Fresnel2D
+from wofryimpl.propagator.propagators2D.fresnel_convolution import FresnelConvolution2D
+from wofryimpl.propagator.propagators2D.fraunhofer import Fraunhofer2D
+from wofryimpl.propagator.propagators2D.integral import Integral2D
+from wofryimpl.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D
+from wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen
 
 from srxraylib.plot.gol import plot_image, plot
 

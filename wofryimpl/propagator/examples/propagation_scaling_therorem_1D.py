@@ -1,18 +1,18 @@
-
-from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
-from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
-from wofry.propagator.propagators1D.fresnel import Fresnel1D
-from wofry.propagator.propagators1D.fresnel_convolution import FresnelConvolution1D
-from wofry.propagator.propagators1D.fraunhofer import Fraunhofer1D
-from wofry.propagator.propagators1D.integral import Integral1D
-from wofry.propagator.propagators1D.fresnel_zoom import FresnelZoom1D
-from wofry.propagator.propagators1D.fresnel_zoom_scaling_theorem import FresnelZoomScaling1D
-
-from wofry.beamline.optical_elements.ideal_elements.screen import WOScreen
-from wofry.beamline.optical_elements.absorbers.slit import WOSlit1D
 from syned.beamline.element_coordinates import ElementCoordinates
 from syned.beamline.beamline_element import BeamlineElement
 from syned.beamline.shape import Rectangle
+
+from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
+from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
+
+from wofryimpl.propagator.propagators1D.fresnel import Fresnel1D
+from wofryimpl.propagator.propagators1D.fresnel_convolution import FresnelConvolution1D
+from wofryimpl.propagator.propagators1D.fraunhofer import Fraunhofer1D
+from wofryimpl.propagator.propagators1D.integral import Integral1D
+from wofryimpl.propagator.propagators1D.fresnel_zoom import FresnelZoom1D
+from wofryimpl.propagator.propagators1D.fresnel_zoom_scaling_theorem import FresnelZoomScaling1D
+from wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen
+from wofryimpl.beamline.optical_elements.absorbers.slit import WOSlit1D
 
 from srxraylib.plot.gol import plot
 

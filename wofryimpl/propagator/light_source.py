@@ -1,9 +1,10 @@
 import numpy
 
+from syned.storage_ring.light_source import LightSource
+
 from wofry.beamline.decorators import LightSourceDecorator
 from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
 from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
-from syned.storage_ring.light_source import LightSource
 
 
 class WOLightSource(LightSource, LightSourceDecorator):
