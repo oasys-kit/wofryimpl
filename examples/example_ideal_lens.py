@@ -40,10 +40,10 @@ from wofry.propagator.propagator import PropagationElements
 
 propagator = PropagationManager.Instance()
 if USE_PROPAGATOR == 'fft':
-    from wofry.propagator.propagators2D.fresnel import Fresnel2D
+    from wofryimpl.propagator.propagators2D.fresnel import Fresnel2D
     propagator.add_propagator(Fresnel2D())
 if USE_PROPAGATOR == 'convolution':
-    from wofry.propagator.propagators2D.fresnel import FresnelConvolution2D
+    from wofryimpl.propagator.propagators2D.fresnel_convolution import FresnelConvolution2D
     propagator.add_propagator(FresnelConvolution2D())
 
 if USE_PROPAGATOR == 'srw':

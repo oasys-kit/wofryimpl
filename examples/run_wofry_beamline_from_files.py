@@ -2,7 +2,7 @@
 
 if __name__ == "__main__":
 
-    from syned.util.json_tools import load_from_json_file
+    from json_tools import load_from_json_file
     from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
     from srxraylib.plot.gol import plot_image
 

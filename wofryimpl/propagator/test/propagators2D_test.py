@@ -16,9 +16,9 @@ from wofry.propagator.propagator import PropagationElements
 from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
 from wofry.propagator.propagator import PropagationManager, PropagationParameters
 
-from wofry.beamline.optical_elements.absorbers.slit import WOSlit, WOGaussianSlit
-from wofry.beamline.optical_elements.ideal_elements.screen import WOScreen
-from wofry.beamline.optical_elements.ideal_elements.lens import WOIdealLens
+from wofryimpl.beamline.optical_elements.absorbers.slit import WOSlit, WOGaussianSlit
+from wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen
+from wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens
 
 do_plot = False
 
@@ -26,12 +26,12 @@ if do_plot:
     from srxraylib.plot.gol import plot,plot_image,plot_table
 
 
-from wofry.propagator.propagators2D.fraunhofer import Fraunhofer2D
-from wofry.propagator.propagators2D.fresnel import Fresnel2D
-from wofry.propagator.propagators2D.fresnel_convolution import FresnelConvolution2D
-from wofry.propagator.propagators2D.integral import Integral2D
-from wofry.propagator.propagators2D import initialize_default_propagator_2D
-from wofry.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D
+from wofryimpl.propagator.propagators2D.fraunhofer import Fraunhofer2D
+from wofryimpl.propagator.propagators2D.fresnel import Fresnel2D
+from wofryimpl.propagator.propagators2D.fresnel_convolution import FresnelConvolution2D
+from wofryimpl.propagator.propagators2D.integral import Integral2D
+from wofryimpl.propagator.propagators2D import initialize_default_propagator_2D
+from wofryimpl.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D
 #
 # some common tools
 #

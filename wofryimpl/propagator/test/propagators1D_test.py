@@ -12,11 +12,10 @@ from syned.beamline.element_coordinates import ElementCoordinates
 from syned.beamline.beamline_element import BeamlineElement
 
 from wofry.propagator.propagator import PropagationElements
-
 from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
 from wofry.propagator.propagator import PropagationManager, PropagationParameters
 
-from wofry.beamline.optical_elements.absorbers.slit import WOSlit1D, WOGaussianSlit1D
+from wofryimpl.beamline.optical_elements.absorbers.slit import WOSlit1D, WOGaussianSlit1D
 
 
 do_plot = False
@@ -24,13 +23,12 @@ do_plot = False
 if do_plot:
     from srxraylib.plot.gol import plot
 
-from wofry.propagator.propagators1D.fresnel_zoom import FresnelZoom1D
-
-from wofry.propagator.propagators1D.fraunhofer import Fraunhofer1D
-from wofry.propagator.propagators1D.fresnel import Fresnel1D
-from wofry.propagator.propagators1D.fresnel_convolution import FresnelConvolution1D
-from wofry.propagator.propagators1D.integral import Integral1D
-from wofry.propagator.propagators1D import initialize_default_propagator_1D
+from wofryimpl.propagator.propagators1D.fresnel_zoom import FresnelZoom1D
+from wofryimpl.propagator.propagators1D.fraunhofer import Fraunhofer1D
+from wofryimpl.propagator.propagators1D.fresnel import Fresnel1D
+from wofryimpl.propagator.propagators1D.fresnel_convolution import FresnelConvolution1D
+from wofryimpl.propagator.propagators1D.integral import Integral1D
+from wofryimpl.propagator.propagators1D import initialize_default_propagator_1D
 
 from scipy.special import fresnel
 

@@ -77,7 +77,7 @@ class WOSlit(Slit, OpticalElementDecorator):
 
 
         txt += "\n"
-        txt += "from wofry.beamline.optical_elements.absorbers.slit import WOSlit"
+        txt += "from wofryimpl.beamline.optical_elements.absorbers.slit import WOSlit"
         txt += "\n"
         txt += "optical_element = WOSlit(boundary_shape=boundary_shape)"
         txt += "\n"
@@ -122,7 +122,7 @@ class WOSlit1D(Slit, OpticalElementDecorator):
         else:
             txt += "\n# ERROR retrieving boundary shape..."
         txt += "\n"
-        txt += "from wofry.beamline.optical_elements.absorbers.slit import WOSlit1D"
+        txt += "from wofryimpl.beamline.optical_elements.absorbers.slit import WOSlit1D"
         txt += "\n"
         txt += "optical_element = WOSlit1D(boundary_shape=boundary_shape)"
         txt += "\n"

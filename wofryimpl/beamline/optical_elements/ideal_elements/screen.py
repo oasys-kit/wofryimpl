@@ -13,7 +13,7 @@ class WOScreen(Screen, OpticalElementDecorator):
 
     def to_python_code(self):
         txt  = ""
-        txt += "\nfrom wofry.beamline.optical_elements.ideal_elements.screen import WOScreen"
+        txt += "\nfrom wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen"
         txt += "\n"
         txt += "\noptical_element = WOScreen()"
         txt += "\n"
@@ -28,7 +28,7 @@ class WOScreen1D(Screen, OpticalElementDecorator):
 
     def to_python_code(self):
         txt  = ""
-        txt += "\nfrom wofry.beamline.optical_elements.ideal_elements.screen import WOScreen1D"
+        txt += "\nfrom wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen1D"
         txt += "\n"
         txt += "\noptical_element = WOScreen1D()"
         txt += "\n"

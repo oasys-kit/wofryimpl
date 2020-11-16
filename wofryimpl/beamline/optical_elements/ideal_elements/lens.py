@@ -27,7 +27,7 @@ class WOIdealLens(IdealLens, OpticalElementDecorator):
 
     def to_python_code(self):
         txt  = ""
-        txt += "\nfrom wofry.beamline.optical_elements.ideal_elements.lens import WOIdealLens"
+        txt += "\nfrom wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens"
         txt += "\n"
         txt += "\noptical_element = WOIdealLens(name='%s',focal_x=%f,focal_y=%f)"%(self.get_name(),self.focal_x(),self.focal_y())
         txt += "\n"
@@ -48,7 +48,7 @@ class WOIdealLens1D(WOIdealLens):
 
     def to_python_code(self):
         txt  = ""
-        txt += "\nfrom wofry.beamline.optical_elements.ideal_elements.lens import WOIdealLens1D"
+        txt += "\nfrom wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens1D"
         txt += "\n"
         txt += "\noptical_element = WOIdealLens1D(name='%s',focal_length=%f)"%(self.get_name(),self.focal_x())
         txt += "\n"

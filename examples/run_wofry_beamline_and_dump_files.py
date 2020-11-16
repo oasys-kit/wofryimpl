@@ -553,7 +553,7 @@ def propagate_full_beamline(wfr):
 def create_json_full_beamline():
 
 
-    from syned.util.json_tools import load_from_json_file
+    from json_tools import load_from_json_file
     from syned.beamline.beamline import Beamline
     from syned.storage_ring.empty_light_source import EmptyLightSource
 
