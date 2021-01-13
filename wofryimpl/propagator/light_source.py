@@ -262,7 +262,7 @@ class WOLightSource(LightSource, LightSourceDecorator):
             if self.get_dimension() == 1:
                 if add_import_section: txt += "\n\n\nfrom srxraylib.plot.gol import plot"
                 txt += "\n\n\nplot(output_wavefront.get_abscissas(),output_wavefront.get_intensity(),title='SOURCE')"
-            elif self._dimension == 2:
+            elif self.get_dimension() == 2:
                 if add_import_section: txt += "\n\n\nfrom srxraylib.plot.gol import plot_image"
                 txt += "\n\n\nplot_image(output_wavefront.get_intensity(),output_wavefront.get_coordinate_x(),output_wavefront.get_coordinate_y(),aspect='auto',title='SOURCE')"
 

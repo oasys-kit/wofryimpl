@@ -71,10 +71,19 @@ class WOBeamline(Beamline):
 
         if do_plot:
             text_code += "\n\nfrom srxraylib.plot.gol import plot, plot_image"
+            text_code += "\nplot_from_oe = 0 # set to a large number to avoid plots"
 
 
         text_code  +=  "\n\n\n##########  SOURCE ##########\n\n\n"
-        text_code += self.get_light_source().to_python_code()
+        text_code += self.get_light_source().to_python_code(do_plot=False, add_import_section=False)
+
+
+        if do_plot:
+            if self.get_light_source().get_dimension() == 1:
+                text_code += "\n\n\nif plot_from_oe <= 0: plot(output_wavefront.get_abscissas(),output_wavefront.get_intensity(),title='SOURCE')"
+            elif self.get_light_source().get_dimension() == 2:
+                text_code += "\n\n\nif plot_from_oe <= 0: plot_image(output_wavefront.get_intensity(),output_wavefront.get_coordinate_x(),output_wavefront.get_coordinate_y(),aspect='auto',title='SOURCE')"
+
 
         if self.get_beamline_elements_number() > 0:
             text_code += "\n\n\n##########  OPTICAL SYSTEM ##########\n\n\n"
@@ -153,8 +162,37 @@ class WOBeamline(Beamline):
                 if do_plot:
                     text_code += "\n\n\n#\n#---- plots -----\n#"
                     if self.get_light_source().get_dimension() == 1:
-                        text_code += "\nplot(output_wavefront.get_abscissas(),output_wavefront.get_intensity(),title='OPTICAL ELEMENT NR %d')" % (index+1)
+                        text_code += "\nif plot_from_oe <= %d: plot(output_wavefront.get_abscissas(),output_wavefront.get_intensity(),title='OPTICAL ELEMENT NR %d')" % (index+1, index+1)
                     else:
-                        text_code += "\nplot_image(output_wavefront.get_intensity(),output_wavefront.get_coordinate_x(),output_wavefront.get_coordinate_y(),aspect='auto',title='OPTICAL ELEMENT NR %d')" % (index+1)
+                        text_code += "\nif plot_from_oe <= %d: plot_image(output_wavefront.get_intensity(),output_wavefront.get_coordinate_x(),output_wavefront.get_coordinate_y(),aspect='auto',title='OPTICAL ELEMENT NR %d')" % (index+1, index+1)
 
         return text_code
+
+    # TODO move to syned beamline
+    def get_beamline_elements_names(self):
+        els = self.get_beamline_elements()
+        NAMES = []
+        for i, eli in enumerate(els):
+            NAMES.append(eli.get_optical_element().get_name())
+        return NAMES
+
+    def get_p_and_q(self):
+        els = self.get_beamline_elements()
+        P = []
+        Q = []
+        for i, eli in enumerate(els):
+            P.append(eli.get_coordinates().p())
+            Q.append(eli.get_coordinates().q())
+        return P, Q
+
+    def distances(self,source_at=0.0):
+        txt = "%5s %15s %10s %10s %10s %10s\n" % ("O.E.#","O.E. Name","p [m]", "q [m]", "src-oe", "src-screen")
+        NAMES = self.get_beamline_elements_names()
+        P,Q = self.get_p_and_q()
+        oe_accumulated = source_at
+        image_accumulated = source_at
+        for i in range(len(NAMES)):
+            oe_accumulated = image_accumulated + P[i]
+            image_accumulated += P[i] + Q[i]
+            txt += "%5d %15s %10g %10g %10g %10g\n" % (i+1,NAMES[i], P[i], Q[i], oe_accumulated, image_accumulated)
+        return txt

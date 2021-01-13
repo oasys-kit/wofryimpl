@@ -60,12 +60,14 @@ class WOSlit(Slit, OpticalElementDecorator):
     def to_python_code(self):
         txt = ""
         boundary_shape = self.get_boundary_shape()
-        txt += "\nfrom syned.beamline.shape import *"
         if isinstance(boundary_shape, Rectangle):
+            txt += "\nfrom syned.beamline.shape import Rectangle"
             txt += "\nboundary_shape=Rectangle(%g, %g, %g, %g)" % boundary_shape.get_boundaries()
         elif isinstance(boundary_shape, Circle):
+            txt += "\nfrom syned.beamline.shape import Circle"
             txt += "\nboundary_shape=Circle(%g, %g, %g)" % boundary_shape.get_boundaries()
         elif isinstance(boundary_shape, Ellipse):
+            txt += "\nfrom syned.beamline.shape import Ellipse"
             txt += "\nboundary_shape=Ellipse(%g, %g, %g, %g)" % boundary_shape.get_boundaries()
 
         elif isinstance(boundary_shape, DoubleRectangle):
@@ -116,8 +118,8 @@ class WOSlit1D(Slit, OpticalElementDecorator):
     def to_python_code(self):
         txt = ""
         boundary_shape = self.get_boundary_shape()
-        txt += "\nfrom syned.beamline.shape import *"
         if isinstance(boundary_shape, Rectangle):
+            txt += "\nfrom syned.beamline.shape import Rectangle"
             txt += "\nboundary_shape=Rectangle(%g, %g, %g, %g)" % boundary_shape.get_boundaries()
         else:
             txt += "\n# ERROR retrieving boundary shape..."
@@ -137,7 +139,22 @@ class WOGaussianSlit1D(Slit, OpticalElementDecorator):
         aperture_diameter =  numpy.abs(boundaries[1] - boundaries[0])
         X = wavefront.get_abscissas()
 
-        window = numpy.exp(-(X*X)/2/(aperture_diameter/2.35)**2)
+        window = numpy.exp(-(X*X)/4/(aperture_diameter/2.35)**2) # factor of 4 instead of 2 because it is amplitude
         wavefront.rescale_amplitudes(window)
 
         return wavefront
+
+    def to_python_code(self):
+        txt = ""
+        boundary_shape = self.get_boundary_shape()
+        if isinstance(boundary_shape, Rectangle):
+            txt += "\nfrom syned.beamline.shape import Rectangle"
+            txt += "\nboundary_shape=Rectangle(%g, %g, %g, %g)" % boundary_shape.get_boundaries()
+        else:
+            txt += "\n# ERROR retrieving boundary shape..."
+        txt += "\n"
+        txt += "from wofryimpl.beamline.optical_elements.absorbers.slit import WOGaussianSlit1D"
+        txt += "\n"
+        txt += "optical_element = WOGaussianSlit1D(boundary_shape=boundary_shape)"
+        txt += "\n"
+        return txt
