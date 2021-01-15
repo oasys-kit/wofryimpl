@@ -52,37 +52,44 @@ class WOBeamline(Beamline):
         text_code += "\nfrom syned.beamline.element_coordinates import ElementCoordinates"
         text_code += "\nfrom wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters"
 
-        if self.get_light_source().get_dimension() == 1:
-            text_code += "\n\nfrom wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D"
-            text_code += "\n\nfrom wofryimpl.propagator.propagators1D.fresnel import Fresnel1D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fresnel_convolution import FresnelConvolution1D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fraunhofer import Fraunhofer1D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators1D.integral import Integral1D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fresnel_zoom import FresnelZoom1D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fresnel_zoom_scaling_theorem import FresnelZoomScaling1D"
-        elif self.get_light_source().get_dimension() == 2:
-            text_code += "\n\nfrom wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D"
-            text_code += "\n\nfrom wofryimpl.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fresnel import Fresnel2D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fresnel_convolution import FresnelConvolution2D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fraunhofer import Fraunhofer2D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators2D.integral import Integral2D"
-            text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D"
+        if self.get_light_source() is None:
+            source_dimension = 0
+            text_code += "\n\n#\n# UNDEFINED SOURCE (please complete...)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! \n#"
+            text_code += "\noutput_wavefront = None"
+            text_code += "\n#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        else:
+            source_dimension = self.get_light_source().get_dimension()
+            if source_dimension == 1:
+                text_code += "\n\nfrom wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D"
+                text_code += "\n\nfrom wofryimpl.propagator.propagators1D.fresnel import Fresnel1D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fresnel_convolution import FresnelConvolution1D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fraunhofer import Fraunhofer1D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators1D.integral import Integral1D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fresnel_zoom import FresnelZoom1D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators1D.fresnel_zoom_scaling_theorem import FresnelZoomScaling1D"
+            elif source_dimension == 2:
+                text_code += "\n\nfrom wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D"
+                text_code += "\n\nfrom wofryimpl.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fresnel import Fresnel2D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fresnel_convolution import FresnelConvolution2D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fraunhofer import Fraunhofer2D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators2D.integral import Integral2D"
+                text_code +=   "\nfrom wofryimpl.propagator.propagators2D.fresnel_zoom_xy import FresnelZoomXY2D"
 
-        if do_plot:
-            text_code += "\n\nfrom srxraylib.plot.gol import plot, plot_image"
-            text_code += "\nplot_from_oe = 0 # set to a large number to avoid plots"
+            if do_plot:
+                text_code += "\n\nfrom srxraylib.plot.gol import plot, plot_image"
+                text_code += "\nplot_from_oe = 0 # set to a large number to avoid plots"
 
 
-        text_code  +=  "\n\n\n##########  SOURCE ##########\n\n\n"
-        text_code += self.get_light_source().to_python_code(do_plot=False, add_import_section=False)
+            text_code  +=  "\n\n\n##########  SOURCE ##########\n\n\n"
+            text_code += self.get_light_source().to_python_code(do_plot=False, add_import_section=False)
 
 
-        if do_plot:
-            if self.get_light_source().get_dimension() == 1:
-                text_code += "\n\n\nif plot_from_oe <= 0: plot(output_wavefront.get_abscissas(),output_wavefront.get_intensity(),title='SOURCE')"
-            elif self.get_light_source().get_dimension() == 2:
-                text_code += "\n\n\nif plot_from_oe <= 0: plot_image(output_wavefront.get_intensity(),output_wavefront.get_coordinate_x(),output_wavefront.get_coordinate_y(),aspect='auto',title='SOURCE')"
+            if do_plot:
+                if source_dimension == 1:
+                    text_code += "\n\n\nif plot_from_oe <= 0: plot(output_wavefront.get_abscissas(),output_wavefront.get_intensity(),title='SOURCE')"
+                elif source_dimension == 2:
+                    text_code += "\n\n\nif plot_from_oe <= 0: plot_image(output_wavefront.get_intensity(),output_wavefront.get_coordinate_x(),output_wavefront.get_coordinate_y(),aspect='auto',title='SOURCE')"
 
 
         if self.get_beamline_elements_number() > 0:
@@ -161,9 +168,9 @@ class WOBeamline(Beamline):
 
                 if do_plot:
                     text_code += "\n\n\n#\n#---- plots -----\n#"
-                    if self.get_light_source().get_dimension() == 1:
+                    if source_dimension == 1:
                         text_code += "\nif plot_from_oe <= %d: plot(output_wavefront.get_abscissas(),output_wavefront.get_intensity(),title='OPTICAL ELEMENT NR %d')" % (index+1, index+1)
-                    else:
+                    elif source_dimension == 2:
                         text_code += "\nif plot_from_oe <= %d: plot_image(output_wavefront.get_intensity(),output_wavefront.get_coordinate_x(),output_wavefront.get_coordinate_y(),aspect='auto',title='OPTICAL ELEMENT NR %d')" % (index+1, index+1)
 
         return text_code
