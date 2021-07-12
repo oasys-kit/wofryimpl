@@ -67,22 +67,48 @@ class FresnelZoomXY2D(Propagator2D):
         shape = wavefront.size()
         delta = wavefront.delta()
 
+
+        # frequency for axis 1
         pixelsize = delta[0]
         npixels = shape[0]
         freq_nyquist = 0.5 / pixelsize
         freq_n = numpy.linspace(-1.0, 1.0, npixels)
-        freq_x = freq_n * freq_nyquist
+        freq_x0 = freq_n * freq_nyquist
+
+        freq_x1 = numpy.fft.fftfreq(npixels, pixelsize)
+        freq_x1 = numpy.fft.ifftshift(freq_x1)
 
         # frequency for axis 2
         pixelsize = delta[1]
         npixels = shape[1]
         freq_nyquist = 0.5 / pixelsize
         freq_n = numpy.linspace(-1.0, 1.0, npixels)
-        freq_y = freq_n * freq_nyquist
+        freq_y0 = freq_n * freq_nyquist
 
-        if shift_half_pixel:
-            freq_x = freq_x - 0.5 * numpy.abs(freq_x[1] - freq_x[0])
-            freq_y = freq_y - 0.5 * numpy.abs(freq_y[1] - freq_y[0])
+        freq_y1 = numpy.fft.fftfreq(npixels, pixelsize)
+        freq_y1 = numpy.fft.ifftshift(freq_y1)
+
+        print(freq_x0[0:10], freq_x1[0:10])
+
+        # It happens that with method=0 (old) the propagation of a centro-symmetric beam
+        # is not longer center but shifted.
+        # This is due to "shifted" storage of the frequencies that is dependent on the
+        # even or odd number of pixels.
+        # It seems that with the new method (method=1) the beam is center.
+        # Note: The new method ignores the shift_half_pixel keyword
+        # See also doscussion with V. Favre-Nicolin email to srio on 2018-05-02
+        method = 1 # 0-old, 1-new
+
+        if method == 0:
+            freq_x = freq_x0
+            freq_y = freq_y0
+            if shift_half_pixel:
+                freq_x = freq_x - 0.5 * numpy.abs(freq_x[1] - freq_x[0])
+                freq_y = freq_y - 0.5 * numpy.abs(freq_y[1] - freq_y[0])
+        else:
+            freq_x = freq_x1
+            freq_y = freq_y1
+
 
         f_x, f_y = numpy.meshgrid(freq_x, freq_y, indexing='ij')
         fsq = numpy.fft.fftshift(f_x ** 2 / magnification_x + f_y ** 2 / magnification_y)
