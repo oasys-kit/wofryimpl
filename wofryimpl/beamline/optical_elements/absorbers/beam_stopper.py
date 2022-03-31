@@ -22,7 +22,7 @@ class WOBeamStopper(BeamStopper, OpticalElementDecorator):
 
     def to_python_code(self):
         boundary_shape = self.get_boundary_shape()
-        txt = "\nfrom syned.beamline.shape import *"
+        txt = "\nfrom syned.beamline.shape import Rectangle, Circle, Ellipse"
         if isinstance(boundary_shape, Rectangle):
             txt += "\nboundary_shape=Rectangle(%g, %g, %g, %g)" % boundary_shape.get_boundaries()
         elif isinstance(boundary_shape, Circle):
@@ -53,7 +53,7 @@ class WOBeamStopper1D(BeamStopper, OpticalElementDecorator):
 
     def to_python_code(self):
         boundary_shape = self.get_boundary_shape()
-        txt = "\nfrom syned.beamline.shape import *"
+        txt = "\nfrom syned.beamline.shape import Rectangle"
         if isinstance(boundary_shape, Rectangle):
             txt += "\nboundary_shape=Rectangle(%g, %g, %g, %g)" % boundary_shape.get_boundaries()
         else:
