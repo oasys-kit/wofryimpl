@@ -113,10 +113,9 @@ class WOThinObject(ThinObject, OpticalElementDecorator):
         output_wavefront.add_phase_shifts(phase_shifts.T)
 
         return output_wavefront
-
     def to_python_code(self, data=None):
         txt  = ""
-        txt += "\nfrom orangecontrib.esrf.wofry.widgets.extension.ow_thin_object_2d import WOThinObject"
+        txt += "\nfrom wofryimpl.beamline.optical_elements.refractors.thin_object import WOThinObject"
         txt += "\n"
         if self.get_material() == "External":
             txt += "\noptical_element = WOThinObject(name='%s',file_with_thickness_mesh='%s',material='%s',refraction_index_delta=%g,att_coefficient=%g)" % \
@@ -210,7 +209,7 @@ class WOThinObject1D(ThinObject, OpticalElementDecorator):
 
     def to_python_code(self, data=None):
         txt  = ""
-        txt += "\nfrom orangecontrib.esrf.wofry.util.thin_object import WOThinObject1D #TODO update"
+        txt += "\nfrom wofryimpl.beamline.optical_elements.refractors.thin_object import WOThinObject1D"
         txt += "\n"
         if self.get_material() == "External":
             txt += "\noptical_element = WOThinObject1D(name='%s',file_with_thickness_mesh='%s',material='%s',refraction_index_delta=%g,att_coefficient=%g)" % \

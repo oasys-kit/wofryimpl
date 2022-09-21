@@ -111,7 +111,7 @@ class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):
 
     def to_python_code(self, data=None):
         txt = ""
-        txt += "\nfrom orangecontrib.esrf.wofry.util.thin_object_corrector import WOThinObjectCorrector #TODO update"
+        txt += "\nfrom wofryimpl.beamline.optical_elements.refractors.thin_object_corrector import WOThinObjectCorrector"
         txt += "\n"
         txt += "\noptical_element = WOThinObjectCorrector("
         txt += "\n    name='%s'," % self.get_name()
@@ -243,7 +243,7 @@ class WOThinObjectCorrector1D(WOThinObject1D, OpticalElementDecorator):
 
     def to_python_code(self, data=None):
         txt = ""
-        txt += "\nfrom orangecontrib.esrf.wofry.util.thin_object_corrector import WOThinObjectCorrector1D #TODO update"
+        txt += "\nfrom wofryimpl.beamline.optical_elements.refractors.thin_object_corrector import WOThinObjectCorrector1D"
         txt += "\n"
         txt += "\noptical_element = WOThinObjectCorrector1D("
         txt += "\n    name='%s'," % self.get_name()
