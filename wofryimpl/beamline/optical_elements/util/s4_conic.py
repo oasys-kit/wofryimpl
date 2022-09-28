@@ -1,15 +1,15 @@
 
 import numpy
 
-from shadow4.optical_surfaces.s4_optical_surface import S4OpticalSurface
+from wofryimpl.beamline.optical_elements.util.s4_optical_surface import S4OpticalSurface
 
-from shadow4.tools.arrayofvectors import vector_refraction
+from wofryimpl.beamline.optical_elements.util.arrayofvectors import vector_refraction
 
 from numpy.testing import assert_equal, assert_almost_equal
 
 
-from shadow4.tools.arrayofvectors import vector_cross, vector_dot, vector_multiply_scalar, vector_sum, vector_diff
-from shadow4.tools.arrayofvectors import vector_modulus_square, vector_norm
+from wofryimpl.beamline.optical_elements.util.arrayofvectors import vector_cross, vector_dot, vector_multiply_scalar, vector_sum, vector_diff
+from wofryimpl.beamline.optical_elements.util.arrayofvectors import vector_modulus_square, vector_norm
 
 # OE surface in form of conic equation:
 #      ccc[0]*X^2 + ccc[1]*Y^2 + ccc[2]*Z^2 +
