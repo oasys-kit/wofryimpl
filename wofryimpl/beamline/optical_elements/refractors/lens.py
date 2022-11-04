@@ -525,17 +525,18 @@ class WOLens1D(Lens, OpticalElementDecorator):
             profile_limits_projected = a[-1, 0] - a[0, 0]
             wavefront_dimension = output_wavefront.get_abscissas()[-1] - output_wavefront.get_abscissas()[0]
             # print("profile deformation dimension: %f m"%(profile_limits))
-            print("profile deformation dimension: %f um" % (1e6 * profile_limits_projected))
-            print("wavefront window dimension: %f um" % (1e6 * wavefront_dimension))
+            if self._keywords_at_creation["verbose"]:
+                print("profile deformation dimension: %f um" % (1e6 * profile_limits_projected))
+                print("wavefront window dimension: %f um" % (1e6 * wavefront_dimension))
 
             if wavefront_dimension <= profile_limits_projected:
-                print("Wavefront window inside error profile domain: no action needed")
+                if self._keywords_at_creation["verbose"]: print("Wavefront window inside error profile domain: no action needed")
             else:
                 if error_edge_management == 0:
-                    print("Profile deformation extrapolated to fit wavefront dimensions")
+                    if self._keywords_at_creation["verbose"]: print("Profile deformation extrapolated to fit wavefront dimensions")
                 else:
                     output_wavefront.clip(a[0, 0], a[-1, 0])
-                    print("Wavefront clipped to limits of deformation profile")
+                    if self._keywords_at_creation["verbose"]: print("Wavefront clipped to limits of deformation profile")
 
         return output_wavefront
 
