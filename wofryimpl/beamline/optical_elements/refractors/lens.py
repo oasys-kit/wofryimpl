@@ -316,7 +316,7 @@ class WOLens(Lens, OpticalElementDecorator):
         txt += "\n    n_lenses=%g,"                  % self._keywords_at_creation["n_lenses"]
         txt += "\n    aperture_shape=%d,"            % self._keywords_at_creation["aperture_shape"]
         txt += "\n    aperture_dimension_h=%g,"      % self._keywords_at_creation["aperture_dimension_h"]
-        txt += "\n    aperture_dimension_v=%g)"      % self._keywords_at_creation["aperture_dimension_v"]
+        txt += "\n    aperture_dimension_v=%g,"      % self._keywords_at_creation["aperture_dimension_v"]
         txt += "\n    verbose=%d)"                   % self._keywords_at_creation["verbose"]
         txt += "\n"
         return txt
