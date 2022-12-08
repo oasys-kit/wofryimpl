@@ -35,7 +35,6 @@ class WOSlit(Slit, OpticalElementDecorator):
                 elif self._boundary_shape.get_name_of_patch(i) == "Circle":
                     windows.append( wavefront.clip_circle(bd[0],bd[1],bd[2],apply_to_wavefront=False) )
                 elif self._boundary_shape.get_name_of_patch(i) == "Ellipse":
-                    print(bd)
                     a_axis = bd[1] - bd[0]
                     b_axis = bd[3] - bd[2]
                     x_center = 0.5 * (bd[0] + bd[1])

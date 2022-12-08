@@ -74,19 +74,15 @@ class WOMirror1D(Mirror, OpticalElementDecorator):
         elif shape == 1:
             ccc = S4Conic.initialize_as_sphere_from_focal_distances(p_focus, q_focus, grazing_angle_in)
             height = ccc.height(x2_oe)
-
-            print(ccc.info())
             y2_oe += height
 
         elif shape == 2:
             ccc = S4Conic.initialize_as_ellipsoid_from_focal_distances(p_focus, q_focus, grazing_angle_in)
             height = ccc.height(x2_oe)
-            print(ccc.info())
             y2_oe += height
         elif shape == 3:
             ccc = S4Conic.initialize_as_paraboloid_from_focal_distances(p_focus, q_focus, grazing_angle_in)
             height = ccc.height(x2_oe)
-            print(ccc.info())
             y2_oe += height
         else:
             raise Exception("Wrong shape")
@@ -134,7 +130,7 @@ class WOMirror1D(Mirror, OpticalElementDecorator):
             for i in range(x2_oe.size):
                 f.write("%g %g\n" % (x2_oe[i], y2_oe[i]))
             f.close()
-            print("File reflector_profile1D.dat written to disk.")
+            if self._keywords_at_creation["verbose"]: print("File reflector_profile1D.dat written to disk.")
 
         return output_wavefront
 
@@ -219,6 +215,7 @@ class WOMirror1D(Mirror, OpticalElementDecorator):
                 mirror_length=1.0,
                 mirror_points=100,
                 write_profile=0,
+                verbose=1,
                              ):
 
         keywords_at_creation = {}
@@ -237,6 +234,7 @@ class WOMirror1D(Mirror, OpticalElementDecorator):
         keywords_at_creation["mirror_length"]                  = mirror_length
         keywords_at_creation["mirror_points"]                  = mirror_points
         keywords_at_creation["write_profile"]                  = write_profile
+        keywords_at_creation["verbose"]                        = verbose
 
         out = WOMirror1D(name="Undefined",
                  surface_shape=None,
@@ -282,7 +280,7 @@ class WOMirror1D(Mirror, OpticalElementDecorator):
 
 if __name__ == "__main__":
 
-    womirror = WOMirror1D.create_from_keywords()
+    womirror = WOMirror1D.create_from_keywords(write_profile=1, verbose=0)
     print(womirror.info())
 
     print(womirror.to_python_code())

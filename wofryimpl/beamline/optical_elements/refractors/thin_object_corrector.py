@@ -17,6 +17,7 @@ class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):
                  wall_thickness=0.0,
                  apply_correction_to_wavefront=0,
                  file_with_thickness_mesh_flag=0,
+                 verbose=1,
                  ):
 
         super().__init__(name=name,
@@ -33,6 +34,8 @@ class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):
         self._refraction_index_delta = refraction_index_delta
         self._att_coefficient = att_coefficient
 
+        self._verbose = verbose
+
     def calculate_correction_profile(self, wavefront):
 
         photon_energy = wavefront.get_photon_energy()
@@ -43,9 +46,9 @@ class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):
         if self._correction_method == 0: # write file with zero profile
             profile = numpy.zeros((x.size, y.size))
         elif self._correction_method == 1: # focus to waist
-
-            print("\n\n\n ==========  parameters from optical element : ")
-            print(self.info())
+            if self._verbose:
+                print("\n\n\n ==========  parameters from optical element : ")
+                print(self.info())
 
 
             refraction_index_delta, att_coefficient = self.get_refraction_index(photon_energy)
@@ -61,7 +64,7 @@ class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):
         profile += self._wall_thickness
         if self._file_with_thickness_mesh_flag:
             write_surface_file(profile.T, x, y, self.get_file_with_thickness_mesh(), overwrite=True)
-            print("\nFile for OASYS " + self.get_file_with_thickness_mesh() + " written to disk.")
+            if self._verbose: print("\nFile for OASYS " + self.get_file_with_thickness_mesh() + " written to disk.")
 
         # H profile
         n = profile.shape[0]
@@ -74,9 +77,10 @@ class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):
 
         yder = numpy.gradient(yy, xx)
         coeff = numpy.polyfit(xx, yder, 1)
-        print("\n\n\n ==========  fitted radius in the H profile center (over 1/%d of length): " % one_over_fraction_in_length)
-        print("fitted lens (with two curved sides) of radius = %g m " % (2 / coeff[0]))
-        print("which corresponds to a focal length of %g m " % (1 / coeff[0] / refraction_index_delta))
+        if self._verbose:
+            print("\n\n\n ==========  fitted radius in the H profile center (over 1/%d of length): " % one_over_fraction_in_length)
+            print("fitted lens (with two curved sides) of radius = %g m " % (2 / coeff[0]))
+            print("which corresponds to a focal length of %g m " % (1 / coeff[0] / refraction_index_delta))
 
         # V profile
         n = profile.shape[1]
@@ -89,9 +93,10 @@ class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):
 
         yder = numpy.gradient(yy, xx)
         coeff = numpy.polyfit(xx, yder, 1)
-        print("\n\n\n ==========  fitted radius in the V profile center (over 1/%d of length): " % one_over_fraction_in_length)
-        print("fitted lens (with two curved sides) of radius = %g m " % (2 / coeff[0]))
-        print("which corresponds to a focal length of %g m " % (1 / coeff[0] / refraction_index_delta))
+        if self._verbose:
+            print("\n\n\n ==========  fitted radius in the V profile center (over 1/%d of length): " % one_over_fraction_in_length)
+            print("fitted lens (with two curved sides) of radius = %g m " % (2 / coeff[0]))
+            print("which corresponds to a focal length of %g m " % (1 / coeff[0] / refraction_index_delta))
 
         return profile, x, y
 
@@ -142,6 +147,7 @@ class WOThinObjectCorrector1D(WOThinObject1D, OpticalElementDecorator):
                  file_with_thickness_mesh_flag=0,
                  fit_fraction_in_length=0.1,
                  fit_filename="",
+                 verbose=1,
                  ):
 
         super().__init__(name=name,
@@ -160,6 +166,8 @@ class WOThinObjectCorrector1D(WOThinObject1D, OpticalElementDecorator):
         self._fit_fraction_in_length = fit_fraction_in_length
         self._fit_filename = fit_filename
 
+        self._verbose = verbose
+
     def calculate_correction_profile(self, wavefront):
         photon_energy = wavefront.get_photon_energy()
 
@@ -169,9 +177,9 @@ class WOThinObjectCorrector1D(WOThinObject1D, OpticalElementDecorator):
             profile = numpy.zeros_like(x)
             profile += self._wall_thickness
         elif self._correction_method == 1:  # focus to waist
-
-            print("\n\n\n ==========  parameters from optical element : ")
-            print(self.info())
+            if self._verbose:
+                print("\n\n\n ==========  parameters from optical element : ")
+                print(self.info())
 
             refraction_index_delta, att_coefficient = self.get_refraction_index(photon_energy)
             # auxiliar spherical wavefront
@@ -191,7 +199,7 @@ class WOThinObjectCorrector1D(WOThinObject1D, OpticalElementDecorator):
             for i in range(x.size):
                 f.write("%g %g\n" % (x[i], profile[i]))
             f.close()
-            print("\nFile 1D for OASYS " + self.get_file_with_thickness_mesh() + " written to disk.")
+            if self._verbose: print("\nFile 1D for OASYS " + self.get_file_with_thickness_mesh() + " written to disk.")
 
         # for info
         n = profile.size
@@ -206,9 +214,10 @@ class WOThinObjectCorrector1D(WOThinObject1D, OpticalElementDecorator):
 
         yder = numpy.gradient(yy, xx)
         coeff = numpy.polyfit(xx, yder, 1)
-        print("\n\n\n ==========  fitted radius in the profile center (over %g of length): " % fraction_in_length)
-        print("fitted lens (with two curved sides) of radius = %g m " % (2 / coeff[0]))
-        print("which corresponds to a focal length of %g m " % (1 / coeff[0] / refraction_index_delta))
+        if self._verbose:
+            print("\n\n\n ==========  fitted radius in the profile center (over %g of length): " % fraction_in_length)
+            print("fitted lens (with two curved sides) of radius = %g m " % (2 / coeff[0]))
+            print("which corresponds to a focal length of %g m " % (1 / coeff[0] / refraction_index_delta))
 
         if self._fit_filename != "":
             f = open(self._fit_filename, 'w')
@@ -219,7 +228,7 @@ class WOThinObjectCorrector1D(WOThinObject1D, OpticalElementDecorator):
             f.write("%g\n" % (2 / coeff[0]))
             f.write("%g\n" % (1 / coeff[0] / refraction_index_delta))
             f.close()
-            print("File %s written to disk." % self._fit_filename)
+            if self._verbose: print("File %s written to disk." % self._fit_filename)
         return x, profile
 
     def applyOpticalElement(self, wavefront, parameters=None, element_index=None):

@@ -48,6 +48,7 @@ class WOThinObject(ThinObject, OpticalElementDecorator):
                  material="",
                  refraction_index_delta=1e-07,
                  att_coefficient=0.0,
+                 verbose=1,
                  ):
         ThinObject.__init__(self,
                       name=name,
@@ -56,6 +57,7 @@ class WOThinObject(ThinObject, OpticalElementDecorator):
 
         self._refraction_index_delta = refraction_index_delta
         self._att_coefficient = att_coefficient
+        self._verbose = verbose
 
     def get_refraction_index(self, photon_energy=10000.0):
 
@@ -96,8 +98,9 @@ class WOThinObject(ThinObject, OpticalElementDecorator):
 
     def applyOpticalElement(self, wavefront, parameters=None, element_index=None):
 
-        print("\n\n\n ==========  parameters from optical element : ")
-        print(self.info())
+        if self._verbose:
+            print("\n\n\n ==========  parameters from optical element : ")
+            print(self.info())
 
         photon_energy = wavefront.get_photon_energy()
 
@@ -134,6 +137,7 @@ class WOThinObject1D(ThinObject, OpticalElementDecorator):
                  material="",
                  refraction_index_delta=1e-07,
                  att_coefficient=0.0,
+                 verbose=1,
                  ):
         super().__init__(
                       name=name,
@@ -142,6 +146,7 @@ class WOThinObject1D(ThinObject, OpticalElementDecorator):
 
         self._refraction_index_delta = refraction_index_delta
         self._att_coefficient = att_coefficient
+        self._verbose = verbose
 
     def get_surface_thickness_mesh(self, wavefront):
         a = numpy.loadtxt(self.get_file_with_thickness_mesh())
@@ -189,8 +194,9 @@ class WOThinObject1D(ThinObject, OpticalElementDecorator):
 
     def applyOpticalElement(self, wavefront, parameters=None, element_index=None):
 
-        print("\n\n\n ==========  parameters from optical element : ")
-        print(self.info())
+        if self._verbose:
+            print("\n\n\n ==========  parameters from optical element : ")
+            print(self.info())
 
         photon_energy = wavefront.get_photon_energy()
 
@@ -244,7 +250,7 @@ if __name__ == "__main__":
 
         optical_element = WOThinObject(name='ThinObject',
                                        file_with_thickness_mesh='dabam2d-001.h5',
-                                       material='Be')
+                                       material='Be', verbose=1)
 
         # no drift in this element
         output_wavefront = optical_element.applyOpticalElement(input_wavefront)
@@ -281,14 +287,15 @@ if __name__ == "__main__":
         for i in range(ny):
             f.write("%g %g\n" % (x[i], z[i]))
         f.close()
-        print("File profile.dat written to disk.")
+        print(">> File profile.dat written to disk.")
 
         optical_element = WOThinObject1D(name='ThinObject1D',
                                        file_with_thickness_mesh='profile.dat',
-                                       material='Be')
+                                       material='Be',
+                                       verbose=1)
 
 
-        print(optical_element.info())
+        # print(optical_element.info())
 
         # no drift in this element
         output_wavefront = optical_element.applyOpticalElement(input_wavefront)

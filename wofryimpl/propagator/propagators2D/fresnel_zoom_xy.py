@@ -88,8 +88,6 @@ class FresnelZoomXY2D(Propagator2D):
         freq_y1 = numpy.fft.fftfreq(npixels, pixelsize)
         freq_y1 = numpy.fft.ifftshift(freq_y1)
 
-        print(freq_x0[0:10], freq_x1[0:10])
-
         # It happens that with method=0 (old) the propagation of a centro-symmetric beam
         # is not longer center but shifted.
         # This is due to "shifted" storage of the frequencies that is dependent on the
