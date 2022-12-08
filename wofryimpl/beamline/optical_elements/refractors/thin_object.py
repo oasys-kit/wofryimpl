@@ -121,11 +121,11 @@ class WOThinObject(ThinObject, OpticalElementDecorator):
         txt += "\nfrom wofryimpl.beamline.optical_elements.refractors.thin_object import WOThinObject"
         txt += "\n"
         if self.get_material() == "External":
-            txt += "\noptical_element = WOThinObject(name='%s',file_with_thickness_mesh='%s',material='%s',refraction_index_delta=%g,att_coefficient=%g)" % \
-                   (self.get_name(), self.get_file_with_thickness_mesh(), self.get_material(), self._refraction_index_delta, self._att_coefficient)
+            txt += "\noptical_element = WOThinObject(name='%s',file_with_thickness_mesh='%s',material='%s',refraction_index_delta=%g,att_coefficient=%g,verbose=%d)" % \
+                   (self.get_name(), self.get_file_with_thickness_mesh(), self.get_material(), self._refraction_index_delta, self._att_coefficient, self._verbose)
         else:
-            txt += "\noptical_element = WOThinObject(name='%s',file_with_thickness_mesh='%s',material='%s')" % \
-                   (self.get_name(), self.get_file_with_thickness_mesh(), self.get_material())
+            txt += "\noptical_element = WOThinObject(name='%s',file_with_thickness_mesh='%s',material='%s',verbose=%d)" % \
+                   (self.get_name(), self.get_file_with_thickness_mesh(), self.get_material(), self._verbose)
         txt += "\n"
         return txt
 

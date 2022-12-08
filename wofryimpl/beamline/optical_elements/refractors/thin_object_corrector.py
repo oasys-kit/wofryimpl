@@ -128,7 +128,8 @@ class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):
             txt += "\n    att_coefficient=%g," % self._att_coefficient
         txt += "\n    focus_at=%g," % self._focus_at
         txt += "\n    wall_thickness=%g," % self._wall_thickness
-        txt += "\n    apply_correction_to_wavefront=%d)" % self._apply_correction_to_wavefront
+        txt += "\n    apply_correction_to_wavefront=%d," % self._apply_correction_to_wavefront
+        txt += "\n    verbose='%d')" % self._verbose
 
         txt += "\n"
         return txt
@@ -266,7 +267,8 @@ class WOThinObjectCorrector1D(WOThinObject1D, OpticalElementDecorator):
         txt += "\n    wall_thickness=%g," % self._wall_thickness
         txt += "\n    apply_correction_to_wavefront=%d," % self._apply_correction_to_wavefront
         txt += "\n    fit_fraction_in_length=%g," % self._fit_fraction_in_length
-        txt += "\n    fit_filename='%s')" % self._fit_filename
+        txt += "\n    fit_filename='%s'," % self._fit_filename
+        txt += "\n    verbose='%d')" % self._verbose
 
         txt += "\n"
         return txt

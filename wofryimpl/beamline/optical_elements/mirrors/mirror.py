@@ -106,7 +106,7 @@ class WOMirror1D(Mirror, OpticalElementDecorator):
 
 
     def applyOpticalElement(self, input_wavefront, parameters=None, element_index=None):
-
+write_profile
 
         grazing_angle_in   = self._keywords_at_creation["grazing_angle_in"]
         flip               = self._keywords_at_creation["flip"]
@@ -269,7 +269,8 @@ class WOMirror1D(Mirror, OpticalElementDecorator):
         txt += "\n    error_file_oversampling_factor=%g," % self._keywords_at_creation["error_file_oversampling_factor"]
         txt += "\n    mirror_length=%g," % self._keywords_at_creation["mirror_length"]
         txt += "\n    mirror_points=%d," % self._keywords_at_creation["mirror_points"]
-        txt += "\n    write_profile=%d)" % self._keywords_at_creation["write_profile"]
+        txt += "\n    write_profile=%d," % self._keywords_at_creation["write_profile"]
+        txt += "\n    verbose=%d)" % self._keywords_at_creation["verbose"]
         txt += "\n"
         return txt
 
