@@ -106,7 +106,6 @@ class WOMirror1D(Mirror, OpticalElementDecorator):
 
 
     def applyOpticalElement(self, input_wavefront, parameters=None, element_index=None):
-write_profile
 
         grazing_angle_in   = self._keywords_at_creation["grazing_angle_in"]
         flip               = self._keywords_at_creation["flip"]
