@@ -5,7 +5,7 @@ import os
 from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
 from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
 
-from wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens, WOIdealLens1D
+from wofryimpl.beamline.optical_elements.ideal_elements.ideal_lens import WOIdealLens, WOIdealLens1D
 
 from wofry.propagator.polarization import Polarization
 

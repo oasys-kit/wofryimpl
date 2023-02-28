@@ -9,7 +9,7 @@ from syned.storage_ring.magnetic_structures.wiggler import Wiggler
 from syned.storage_ring.magnetic_structures.bending_magnet import BendingMagnet
 from syned.storage_ring.magnetic_structure import MagneticStructure
 from syned.beamline.optical_elements.ideal_elements.screen import Screen
-from syned.beamline.optical_elements.ideal_elements.lens import IdealLens
+from syned.beamline.optical_elements.ideal_elements.ideal_lens import IdealLens
 from syned.beamline.optical_elements.absorbers.filter import Filter
 from syned.beamline.optical_elements.absorbers.slit import Slit
 from syned.beamline.optical_elements.absorbers.beam_stopper import BeamStopper
@@ -51,7 +51,7 @@ from urllib.request import urlopen
 #
 try:
     from wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen
-    from wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens
+    from wofryimpl.beamline.optical_elements.ideal_elements.ideal_lens import WOIdealLens
     # from wofryimpl.beamline.optical_elements.absorbers.filter import WOFilter
     from wofryimpl.beamline.optical_elements.absorbers.slit import WOSlit
     from wofryimpl.beamline.optical_elements.absorbers.beam_stopper import WOBeamStopper

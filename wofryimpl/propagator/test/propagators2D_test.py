@@ -18,7 +18,7 @@ from wofry.propagator.propagator import PropagationManager, PropagationParameter
 
 from wofryimpl.beamline.optical_elements.absorbers.slit import WOSlit, WOGaussianSlit
 from wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen
-from wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens
+from wofryimpl.beamline.optical_elements.ideal_elements.ideal_lens import WOIdealLens
 
 do_plot = False
 

@@ -133,7 +133,7 @@ def ideal_lens_ml(input_wavefront):
     #
     # define current oe
     #
-    from wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens
+    from wofryimpl.beamline.optical_elements.ideal_elements.ideal_lens import WOIdealLens
 
     optical_element = WOIdealLens(name='',focal_x=8.319000,focal_y=99999999999999.000000)
 
@@ -308,7 +308,7 @@ def ideal_lens_KBv(input_wavefront):
     #
     # define current oe
     #
-    from wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens
+    from wofryimpl.beamline.optical_elements.ideal_elements.ideal_lens import WOIdealLens
 
     optical_element = WOIdealLens(name='',focal_x=100000000.000000,focal_y=0.099946)
 
@@ -424,7 +424,7 @@ def ideal_lens_KBh(input_wavefront):
     #
     # define current oe
     #
-    from wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens
+    from wofryimpl.beamline.optical_elements.ideal_elements.ideal_lens import WOIdealLens
 
     optical_element = WOIdealLens(name='',focal_x=0.049983,focal_y=100000000.000000)
 

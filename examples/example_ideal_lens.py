@@ -33,7 +33,7 @@ from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
 from syned.beamline.element_coordinates import ElementCoordinates
 from syned.beamline.beamline_element import BeamlineElement
 from wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen as Screen
-from wofryimpl.beamline.optical_elements.ideal_elements.lens import WOIdealLens, WOIdealLens1D
+from wofryimpl.beamline.optical_elements.ideal_elements.ideal_lens import WOIdealLens, WOIdealLens1D
 # propagator
 from wofry.propagator.propagator import PropagationManager, PropagationParameters
 from wofry.propagator.propagator import PropagationElements

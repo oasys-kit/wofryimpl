@@ -2,7 +2,7 @@
 Represents an ideal lens.
 """
 
-from syned.beamline.optical_elements.ideal_elements.lens import IdealLens
+from syned.beamline.optical_elements.ideal_elements.ideal_lens import IdealLens
 from wofry.beamline.decorators import OpticalElementDecorator
 
 class WOIdealLens(IdealLens, OpticalElementDecorator):
