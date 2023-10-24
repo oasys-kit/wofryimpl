@@ -36,7 +36,8 @@ class UndulatorCoherentModeDecomposition1D():
                  number_of_points=100,
                  distance_to_screen=100,
                  scan_direction="V",
-                 magnification_x=None,
+                 magnification_x_forward=100,
+                 magnification_x_backward=0.01,
                  sigmaxx = 5e-6,
                  sigmaxpxp = 5e-6,
                  useGSMapproximation=False):
@@ -51,18 +52,16 @@ class UndulatorCoherentModeDecomposition1D():
         self.abscissas_interval = abscissas_interval
         self.number_of_points   = number_of_points
         self.distance_to_screen = distance_to_screen
-        if magnification_x is None:
-            self.magnification_x = 1.0 / self.distance_to_screen
-        else:
-            self.magnification_x = magnification_x
+        self.magnification_x_forward = magnification_x_forward
         self.scan_direction     = scan_direction
+        self.magnification_x_backward = magnification_x_backward
         self.mxx                = 1.0 / sigmaxx**2
         self.mxpxp              = 1.0 / sigmaxpxp**2
         self.useGSMapproximation = useGSMapproximation
 
         # calculated
-        self._abscissas_interval_in_far_field = self.abscissas_interval / self.magnification_x
-
+        #self._abscissas_interval_in_far_field = self.abscissas_interval / self.magnification_x
+        self._abscissas_interval_in_far_field = self.abscissas_interval * self.magnification_x_forward
         # development flags, use with care
         self._use_dirac_deltas = False
         self._use_vectorization = True
@@ -177,7 +176,7 @@ class UndulatorCoherentModeDecomposition1D():
     def _calculate_backpropagation(self):
         self.output_wavefront = self.backpropagate(input_wavefront=self.far_field_wavefront,
                                          distance=-self.distance_to_screen,
-                                         magnification_x=self.magnification_x)
+                                         magnification_x=self.magnification_x_backward)
 
         self.abscissas = self.output_wavefront.get_abscissas()
 
