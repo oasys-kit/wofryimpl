@@ -33,7 +33,8 @@ class WOLightSourceCMD(LightSource, LightSourceDecorator, UndulatorCoherentModeD
                  number_of_points     = undulator_coherent_mode_decomposition_1d.number_of_points    ,
                  distance_to_screen   = undulator_coherent_mode_decomposition_1d.distance_to_screen  ,
                  scan_direction       = undulator_coherent_mode_decomposition_1d.scan_direction      ,
-                 magnification_x      = undulator_coherent_mode_decomposition_1d.magnification_x     ,
+                 magnification_x_forward = undulator_coherent_mode_decomposition_1d.magnification_x_forward,
+                 magnification_x_backward = undulator_coherent_mode_decomposition_1d.magnification_x_backward,
                  sigmaxx              = 1.0 / numpy.sqrt(undulator_coherent_mode_decomposition_1d.mxx)  ,
                  sigmaxpxp            = 1.0 / numpy.sqrt(undulator_coherent_mode_decomposition_1d.mxpxp),
                  useGSMapproximation  = undulator_coherent_mode_decomposition_1d.useGSMapproximation ,
@@ -77,6 +78,8 @@ class WOLightSourceCMD(LightSource, LightSourceDecorator, UndulatorCoherentModeD
         txt += "\n    abscissas_interval=%g," % self.abscissas_interval
         txt += "\n    number_of_points=%g," % self.number_of_points
         txt += "\n    distance_to_screen=%g," % self.distance_to_screen
+        txt += "\n    magnification_x_forward=%g," % self.magnification_x_forward
+        txt += "\n    magnification_x_backward=%g," % self.magnification_x_backward
         txt += "\n    scan_direction='%s'," % self.scan_direction
         txt += "\n    sigmaxx=%g,"   % (1.0 / numpy.sqrt(self.mxx))
         txt += "\n    sigmaxpxp=%g," % (1.0 / numpy.sqrt(self.mxpxp))
