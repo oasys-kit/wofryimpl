@@ -1,10 +1,8 @@
 #   propagate_2D_fresnel               \
-#   propagate_2D_fresnel_convolution   | Near field Fresnel propagators via convolution in Fourier space. Three methods
-#   propagate_2D_fresnel_srw          /
+#   propagate_2D_fresnel_convolution   | Near field Fresnel propagators via convolution in Fourier space.
 #
-#          three methods available: 'fft': fft -> multiply by kernel in freq -> ifft
+#          two methods available: 'fft': fft -> multiply by kernel in freq -> ifft
 #                                   'convolution': scipy.signal.fftconvolve(wave,kernel in space)
-#                                   'srw': use the SRW package
 #
 #
 #

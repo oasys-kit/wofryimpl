@@ -262,6 +262,20 @@ class UndulatorCoherentModeDecomposition1D():
     def get_eigenvalue(self, mode):
         return self.eigenvalues[mode]
 
+    def get_CSD(self):
+        return self.CSD
+
+    def get_cross_spectral_density(self):
+        return self.CSD
+
+    def get_spectral_degree_of_coherence(self):
+        CSD = self.CSD
+        CSDii = numpy.zeros(CSD.shape[0], dtype=float)
+        for i in range(CSD.shape[0]):
+            CSDii[i] = numpy.abs(CSD[i, i])
+
+        return numpy.abs(CSD) / numpy.sqrt(numpy.outer(CSDii, CSDii))
+
     @classmethod
     def calculate_undulator_emission(cls,
             electron_energy=6.04,
@@ -428,14 +442,22 @@ if __name__ == "__main__":
                                     sigmaxx=sigmaxx,
                                     sigmaxpxp=sigmaxpxp,
                                     useGSMapproximation=False)
+    #
     # make calculation
+    #
     out = co.calculate()
 
+    #
+    # plot CSD
+    #
     CSD = out["CSD"]
     abscissas = out["abscissas"]
 
     plot_image(np.abs(CSD), abscissas*1e6, abscissas*1e6, title="Cross spectral density", xtitle="x1 [um]", ytitle="x2 [um]")
 
+    #
+    # plot SD
+    #
     SD = np.zeros_like(abscissas)
     for i in range(SD.size):
         SD[i] = CSD[i,i]
@@ -491,3 +513,12 @@ if __name__ == "__main__":
     print(">>>>>>", co.get_abscissas().shape, co.get_eigenvectors().shape)
     wf0 = co.get_eigenvector_wavefront(0)
     plot(wf0.get_abscissas(), wf0.get_intensity())
+
+
+    #
+    # plot SDC
+    #
+    abscissas = co.get_abscissas()
+    SpectralDegreeOfCoherence = co.get_spectral_degree_of_coherence()
+    plot_image(SpectralDegreeOfCoherence, abscissas * 1e6, abscissas * 1e6, title="Spectral Degree of Coherence",
+               xtitle="x1 [um]", ytitle="x2 [um]")
