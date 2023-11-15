@@ -3,15 +3,23 @@ from scipy.interpolate import interp2d
 import scipy.constants as codata
 import xraylib
 
-from oasys.util.oasys_util import write_surface_file, read_surface_file
-from oasys.util.oasys_objects import OasysSurfaceData
-
-
 from syned.beamline.optical_element import OpticalElement
-from syned.widget.widget_decorator import WidgetDecorator
 
 from wofry.beamline.decorators import OpticalElementDecorator
+import h5py
+import os
 
+# copied from oasys.util.oasys_util import read_surface_file TODO: reimport when moved away from Oasys
+def read_surface_file(file_name, subgroup_name="surface_file"):
+
+    if not os.path.isfile(file_name): raise ValueError("File " + file_name + " not existing")
+
+    file = h5py.File(file_name, 'r')
+    xx = file[subgroup_name + "/X"][()]
+    yy = file[subgroup_name + "/Y"][()]
+    zz = file[subgroup_name + "/Z"][()]
+
+    return xx, yy, zz
 
 # mimics a syned element
 class ThinObject(OpticalElement):
@@ -229,7 +237,6 @@ class WOThinObject1D(ThinObject, OpticalElementDecorator):
 
 if __name__ == "__main__":
 
-    import numpy
     from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
     from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
     from srxraylib.plot.gol import plot, plot_image

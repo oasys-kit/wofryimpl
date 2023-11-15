@@ -1,8 +1,21 @@
 import numpy
 
-from oasys.util.oasys_util import write_surface_file
 from wofryimpl.beamline.optical_elements.refractors.thin_object import WOThinObject, WOThinObject1D
 from wofry.beamline.decorators import OpticalElementDecorator
+
+import h5py
+import os
+
+# copied from oasys.util.oasys_util import read_surface_file TODO: reimport when moved away from Oasys
+def read_surface_file(file_name, subgroup_name="surface_file"):
+    if not os.path.isfile(file_name): raise ValueError("File " + file_name + " not existing")
+
+    file = h5py.File(file_name, 'r')
+    xx = file[subgroup_name + "/X"][()]
+    yy = file[subgroup_name + "/Y"][()]
+    zz = file[subgroup_name + "/Z"][()]
+
+    return xx, yy, zz
 
 # the 2D corrector
 class WOThinObjectCorrector(WOThinObject, OpticalElementDecorator):

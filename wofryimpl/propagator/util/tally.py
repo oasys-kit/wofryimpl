@@ -1,27 +1,26 @@
 import numpy
-from oasys.util.oasys_util import get_fwhm
-
 from srxraylib.plot.gol import plot, plot_image
 import matplotlib.pylab as plt
-import os
 
-# def get_fwhm(histogram, bins):
-#     quote = numpy.max(histogram)*0.5
-#     cursor = numpy.where(histogram >= quote)
-#
-#     if histogram[cursor].size > 1:
-#         bin_size    = bins[1]-bins[0]
-#         fwhm        = bin_size*(cursor[0][-1]-cursor[0][0])
-#         coordinates = (bins[cursor[0][0]], bins[cursor[0][-1]])
-#     else:
-#         fwhm = 0.0
-#         coordinates = None
-#
-#     return fwhm, quote, coordinates
 
-#
-#
-#
+# copied from "from oasys.util.oasys_util import get_fwhm" TODO: reimport when moved away from Oasys
+def get_fwhm(histogram, bins, ret0=None):
+    fwhm = ret0
+    quote = ret0
+    coordinates = None
+
+    if histogram.size > 1:
+        quote = numpy.max(histogram)*0.5
+        cursor = numpy.where(histogram >= quote)
+
+        if histogram[cursor].size > 1:
+            bin_size    = bins[1]-bins[0]
+            fwhm        = bin_size*(cursor[0][-1]-cursor[0][0])
+            coordinates = (bins[cursor[0][0]], bins[cursor[0][-1]])
+
+    return fwhm, quote, coordinates
+
+
 class Tally():
     def __init__(self,
                  scan_variable_name='x',
