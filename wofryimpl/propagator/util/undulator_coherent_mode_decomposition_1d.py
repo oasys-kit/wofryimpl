@@ -38,9 +38,14 @@ class UndulatorCoherentModeDecomposition1D():
                  scan_direction="V",
                  magnification_x_forward=100,
                  magnification_x_backward=0.01,
-                 sigmaxx = 5e-6,
-                 sigmaxpxp = 5e-6,
-                 useGSMapproximation=False):
+                 sigmaxx=5e-6,
+                 sigmaxpxp=5e-6,
+                 useGSMapproximation=False,
+                 e_energy_dispersion_flag=0,
+                 e_energy_dispersion_sigma_relative=1e-3,
+                 e_energy_dispersion_interval_in_sigma_units=6.0,
+                 e_energy_dispersion_points=11,
+    ):
 
         # inputs
         self.electron_energy    = electron_energy
@@ -58,6 +63,11 @@ class UndulatorCoherentModeDecomposition1D():
         self.mxx                = 1.0 / sigmaxx**2
         self.mxpxp              = 1.0 / sigmaxpxp**2
         self.useGSMapproximation = useGSMapproximation
+
+        self.e_energy_dispersion_flag                    = e_energy_dispersion_flag
+        self.e_energy_dispersion_sigma_relative          = e_energy_dispersion_sigma_relative
+        self.e_energy_dispersion_interval_in_sigma_units = e_energy_dispersion_interval_in_sigma_units
+        self.e_energy_dispersion_points                  = e_energy_dispersion_points
 
         # calculated
         #self._abscissas_interval_in_far_field = self.abscissas_interval / self.magnification_x
@@ -122,13 +132,55 @@ class UndulatorCoherentModeDecomposition1D():
 
     def calculate(self):
         if not self.useGSMapproximation:
-            print("Calculating far field emission using pySRU...")
-            self._calculate_far_field()
-            print("Calculating backpropagation to source position...")
-            self._calculate_backpropagation()
-            print("Computing Cross Spectral Density...")
-            self._calculate_CSD()
-            print("Diagonalizing CSD...")
+            if not self.e_energy_dispersion_flag: # DE/E=0
+                print("Calculating far field emission using pySRU...")
+                self._calculate_far_field()
+                print("Calculating backpropagation to source position...")
+                self._calculate_backpropagation()
+                print("Computing Cross Spectral Density...")
+                self._calculate_CSD()
+                print("Diagonalizing CSD...")
+                self._diagonalize()
+                print("Done\n")
+                return {"CSD":self.CSD,
+                        "abscissas":self.output_wavefront.get_abscissas(),
+                        "eigenvalues": self.eigenvalues,
+                        "eigenvectors": self.eigenvectors}
+            else:
+                electron_energy_center = self.electron_energy
+
+                # e_energy_dispersion_flag = 1
+                # e_energy_dispersion_sigma_relative = 1e-3
+                # e_energy_dispersion_interval_in_sigma_units = 6.0
+                # e_energy_dispersion_points = 11
+
+                sigma_delta = self.e_energy_dispersion_sigma_relative * electron_energy_center
+                interval = self.e_energy_dispersion_interval_in_sigma_units * sigma_delta
+                electron_energies = numpy.linspace(electron_energy_center - 0.5 * interval,
+                                                   electron_energy_center + 0.5 * interval,
+                                                   self.e_energy_dispersion_points)
+                weights = numpy.exp(-(electron_energies - electron_energy_center) ** 2 / 2 / sigma_delta ** 2)
+                weights /= weights.sum()
+                print("electron energies: ", electron_energies)
+                print("weigths: ", weights)
+            for i, electron_energy_i in enumerate(electron_energies):
+                self.electron_energy = electron_energy_i
+                print(">>> Calculating CSD for electron energy %f GeV weight: %f (%d/%d)..." %
+                      (electron_energy_i, weights[i], i+1, self.e_energy_dispersion_points))
+                print("  Calculating far field emission using pySRU...")
+                self._calculate_far_field()
+                print("  Calculating backpropagation to source position...")
+                self._calculate_backpropagation()
+                print("  Computing Cross Spectral Density...")
+                CSD = self._calculate_CSD()
+                if i == 0:
+                    CSD_CUMULATED = CSD * weights[i]
+                else:
+                    CSD_CUMULATED += CSD * weights[i]
+
+                self.CSD = CSD_CUMULATED
+
+            print("\nDiagonalizing CSD...")
             self._diagonalize()
             print("Done\n")
             return {"CSD":self.CSD,
@@ -136,6 +188,7 @@ class UndulatorCoherentModeDecomposition1D():
                     "eigenvalues": self.eigenvalues,
                     "eigenvectors": self.eigenvectors}
         else:
+            if self.e_energy_dispersion_flag: raise NotImplementedError("GSM not implemented for electron energy dispersion.")
             self._calculate_CSD_GSM()
             self._diagonalize()
             return {"CSD":self.CSD,
@@ -196,6 +249,7 @@ class UndulatorCoherentModeDecomposition1D():
                     CSD[i, j] = tmp
 
         self.CSD = CSD
+        return CSD
 
     def _calculate_CSD_GSM(self):
 
@@ -221,6 +275,7 @@ class UndulatorCoherentModeDecomposition1D():
         sigmaMu = beta * sigmaI
         CSD = numpy.exp(-(X1**2+X2**2)/4/sigmaI**2) * numpy.exp(-(X2-X1)**2/2/sigmaMu**2)
         self.CSD = CSD
+        return CSD
 
     def _diagonalize(self, normalize_eigenvectors=False):
         #
@@ -441,7 +496,12 @@ if __name__ == "__main__":
                                     scan_direction="V",
                                     sigmaxx=sigmaxx,
                                     sigmaxpxp=sigmaxpxp,
-                                    useGSMapproximation=False)
+                                    useGSMapproximation=False,
+                                    e_energy_dispersion_flag=1,
+                                    e_energy_dispersion_sigma_relative=1e-3,
+                                    e_energy_dispersion_interval_in_sigma_units=1.0,
+                                    e_energy_dispersion_points=11,
+                                    )
     #
     # make calculation
     #
@@ -522,3 +582,27 @@ if __name__ == "__main__":
     SpectralDegreeOfCoherence = co.get_spectral_degree_of_coherence()
     plot_image(SpectralDegreeOfCoherence, abscissas * 1e6, abscissas * 1e6, title="Spectral Degree of Coherence",
                xtitle="x1 [um]", ytitle="x2 [um]")
+
+
+
+    # e_energy_dispersion_flag = 1
+    # e_energy_dispersion_sigma_relative = 1e-3
+    # e_energy_dispersion_interval_in_sigma_units = 6.0
+    # e_energy_dispersion_points = 11
+    #
+    #
+    # if e_energy_dispersion_flag:
+    #     e0 = 6.0
+    #     sigma_delta = e_energy_dispersion_sigma_relative * e0
+    #     interval = e_energy_dispersion_interval_in_sigma_units * sigma_delta
+    #     electron_energies = numpy.linspace(e0 - 0.5 * interval, e0 + 0.5 * interval, e_energy_dispersion_points )
+    #     print(electron_energies)
+    #
+    #     weights = numpy.exp(-(electron_energies-e0)**2 / 2 / sigma_delta**2)
+    #
+    #     print("weights: ", weights)
+    #
+    #     weights /= weights.sum()
+    #
+    #     print("normalized weights: ", weights)
+    #     print("total normalized weights: ", weights.sum())

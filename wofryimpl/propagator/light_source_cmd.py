@@ -38,6 +38,10 @@ class WOLightSourceCMD(LightSource, LightSourceDecorator, UndulatorCoherentModeD
                  sigmaxx              = 1.0 / numpy.sqrt(undulator_coherent_mode_decomposition_1d.mxx)  ,
                  sigmaxpxp            = 1.0 / numpy.sqrt(undulator_coherent_mode_decomposition_1d.mxpxp),
                  useGSMapproximation  = undulator_coherent_mode_decomposition_1d.useGSMapproximation ,
+                 e_energy_dispersion_flag                    = undulator_coherent_mode_decomposition_1d.e_energy_dispersion_flag,
+                 e_energy_dispersion_sigma_relative          = undulator_coherent_mode_decomposition_1d.e_energy_dispersion_sigma_relative,
+                 e_energy_dispersion_interval_in_sigma_units = undulator_coherent_mode_decomposition_1d.e_energy_dispersion_interval_in_sigma_units,
+                 e_energy_dispersion_points                  = undulator_coherent_mode_decomposition_1d.e_energy_dispersion_points,
                 )
 
         self._dimension =  dimension
@@ -84,10 +88,16 @@ class WOLightSourceCMD(LightSource, LightSourceDecorator, UndulatorCoherentModeD
         txt += "\n    sigmaxx=%g,"   % (1.0 / numpy.sqrt(self.mxx))
         txt += "\n    sigmaxpxp=%g," % (1.0 / numpy.sqrt(self.mxpxp))
         if self.useGSMapproximation:
-            txt += "\n    useGSMapproximation=True,)"
+            txt += "\n    useGSMapproximation=True,"
         else:
-            txt += "\n    useGSMapproximation=False,)"
-        txt += "\n# make calculation"
+            txt += "\n    useGSMapproximation=False,"
+
+        txt += "\n    e_energy_dispersion_flag=%d," % (self.e_energy_dispersion_flag)
+        txt += "\n    e_energy_dispersion_sigma_relative=%g," % (self.e_energy_dispersion_sigma_relative)
+        txt += "\n    e_energy_dispersion_interval_in_sigma_units=%g," % (self.e_energy_dispersion_interval_in_sigma_units)
+        txt += "\n    e_energy_dispersion_points=%g)" % (self.e_energy_dispersion_points)
+
+        txt += "\n\n# make calculation"
         txt += "\ncoherent_mode_decomposition_results = coherent_mode_decomposition.calculate()"
 
         txt += "\n\nmode_index = 0"
