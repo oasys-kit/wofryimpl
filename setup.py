@@ -11,7 +11,7 @@ except AttributeError:
 
 NAME = 'wofryimpl'
 
-VERSION = '1.0.25'
+VERSION = '1.0.26'
 ISRELEASED = True
 
 DESCRIPTION = 'WOFRY (Wave Optics FRamework in pYthon) standard implementation'
