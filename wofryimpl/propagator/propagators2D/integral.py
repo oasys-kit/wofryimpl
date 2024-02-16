@@ -44,16 +44,19 @@ class Integral2D(Propagator2D):
 
         shuffle_interval = self.get_additional_parameter("shuffle_interval",False,parameters,element_index=element_index)
         calculate_grid_only = self.get_additional_parameter("calculate_grid_only",True,parameters,element_index=element_index)
+        m_x = self.get_additional_parameter("magnification_x",1.0,parameters,element_index=element_index)
+        m_y = self.get_additional_parameter("magnification_y",1.0,parameters,element_index=element_index)
 
         return self.propagate_wavefront(wavefront,propagation_distance,shuffle_interval=shuffle_interval,
-                                 calculate_grid_only=calculate_grid_only)
+                                        calculate_grid_only=calculate_grid_only,
+                                        magnification_x=m_x, magnification_y=m_y)
 
     @classmethod
-    def propagate_wavefront(cls,wavefront,propagation_distance,shuffle_interval=False,calculate_grid_only=True):
+    def propagate_wavefront(cls,wavefront,propagation_distance,shuffle_interval=False,calculate_grid_only=True,
+                            magnification_x=1.0, magnification_y=1.0):
         #
         # Fresnel-Kirchhoff integral (neglecting inclination factor)
         #
-
         if not calculate_grid_only:
             #
             # calculation over the whole detector area
@@ -63,14 +66,14 @@ class Integral2D(Propagator2D):
             wavelength = wavefront.get_wavelength()
             amplitude = wavefront.get_complex_amplitude()
 
-            det_x = p_x.copy()
-            det_y = p_y.copy()
+            det_x = p_x.copy()  * magnification_x
+            det_y = p_y.copy()  * magnification_y
 
             p_X = wavefront.get_mesh_x()
             p_Y = wavefront.get_mesh_y()
 
-            det_X = p_X
-            det_Y = p_Y
+            det_X = numpy.outer(det_x, numpy.ones_like(det_y))
+            det_Y = numpy.outer(numpy.ones_like(det_x), det_y)
 
 
             amplitude_propagated = numpy.zeros_like(amplitude,dtype='complex')
@@ -95,35 +98,68 @@ class Integral2D(Propagator2D):
             output_wavefront = GenericWavefront2D.initialize_wavefront_from_arrays(det_x,det_y,amplitude_propagated)
 
         else:
+
             x = wavefront.get_coordinate_x()
             y = wavefront.get_coordinate_y()
-            X = wavefront.get_mesh_x()
-            Y = wavefront.get_mesh_y()
+            X = numpy.outer(x, numpy.ones_like(y))
+            Y = numpy.outer(numpy.ones_like(x), y)
+            X_flatten = X.flatten()
+            Y_flatten = Y.flatten()
+
+            det_x = x.copy()  * magnification_x
+            det_y = y.copy()  * magnification_y
+            det_X = numpy.outer(det_x, numpy.ones_like(det_y))
+            det_Y = numpy.outer(numpy.ones_like(det_x), det_y)
+            det_X_flatten = det_X.flatten()
+            det_Y_flatten = det_Y.flatten()
+
             wavenumber = 2 * numpy.pi / wavefront.get_wavelength()
             amplitude = wavefront.get_complex_amplitude()
 
-            used_indices = wavefront.get_mask_grid(width_in_pixels=(1,1),number_of_lines=(1,1))
-            indices_x = wavefront.get_mesh_indices_x()
-            indices_y = wavefront.get_mesh_indices_y()
+            indices_x = numpy.outer(numpy.arange(0, wavefront.size()[0]), numpy.ones(wavefront.size()[1]))
+            indices_y = numpy.outer(numpy.ones(wavefront.size()[0]), numpy.arange(0, wavefront.size()[1]))
 
-            indices_x_flatten = indices_x[numpy.where(used_indices == 1)].flatten()
-            indices_y_flatten = indices_y[numpy.where(used_indices == 1)].flatten()
-            X_flatten         =         X[numpy.where(used_indices == 1)].flatten()
-            Y_flatten         =         Y[numpy.where(used_indices == 1)].flatten()
-            complex_amplitude_propagated = amplitude*0
+            fla_x_indices = indices_x.flatten()
+            fla_y_indices = indices_y.flatten()
+
+            weights = numpy.zeros_like(X)
+            weights[weights.shape[0] // 2, :] = 1
+            weights[:, weights.shape[1] // 2] = 1
+            fla_weights = weights.flatten()
+
+            good_indices = numpy.argwhere(fla_weights == 1)
+            ngood = good_indices.size
+
+
+            det_X_flatten_good = det_X_flatten[good_indices]
+            det_Y_flatten_good = det_Y_flatten[good_indices]
+
+            fla_complex_amplitude_propagated = numpy.zeros(ngood, dtype=complex)
+            complex_amplitude_propagated = numpy.zeros_like(amplitude, dtype=complex)
+
+            ########
 
             print("propagate_2D_integral: Calculating %d points from a total of %d x %d = %d"%(
-                X_flatten.size,amplitude.shape[0],amplitude.shape[1],amplitude.shape[0]*amplitude.shape[1]))
+                ngood, amplitude.shape[0], amplitude.shape[1], amplitude.shape[0] * amplitude.shape[1]))
 
-            for i in range(X_flatten.size):
-                r = numpy.sqrt( numpy.power(wavefront.get_mesh_x() - X_flatten[i],2) +
-                                numpy.power(wavefront.get_mesh_y() - Y_flatten[i],2) +
-                                numpy.power(propagation_distance,2) )
+            propagation_distance = numpy.ones_like(X) * propagation_distance
 
-                complex_amplitude_propagated[int(indices_x_flatten[i]),int(indices_y_flatten[i])] = (amplitude / r * numpy.exp(1.j * wavenumber *  r)).sum()
+            for i in range(ngood):
+                r = numpy.sqrt( (X - det_X_flatten_good[i])**2 +
+                                (Y - det_Y_flatten_good[i])**2 +
+                                propagation_distance**2 )
 
-            output_wavefront = GenericWavefront2D.initialize_wavefront_from_arrays(x_array=x,
-                                                                                   y_array=y,
+                print("r shape: ", r.shape, amplitude.shape, i)
+                fla_complex_amplitude_propagated[i] = (amplitude / r * numpy.exp(1.j * wavenumber *  r)).sum()
+
+
+            for i in range(ngood):
+                ix = int(fla_x_indices[good_indices][i])
+                iy = int(fla_y_indices[good_indices][i])
+                complex_amplitude_propagated[ix, iy] = fla_complex_amplitude_propagated[i]
+
+            output_wavefront = GenericWavefront2D.initialize_wavefront_from_arrays(x_array=det_x,
+                                                                                   y_array=det_y,
                                                                                    z_array=complex_amplitude_propagated,
                                                                                    wavelength=wavefront.get_wavelength())
 

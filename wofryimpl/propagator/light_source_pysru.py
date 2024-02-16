@@ -8,12 +8,22 @@ from wofryimpl.propagator.util.undulator_coherent_mode_decomposition_1d import U
 
 from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D
 
+from pySRU.Simulation import create_simulation
+from pySRU.ElectronBeam import ElectronBeam as PySruElectronBeam
+from pySRU.MagneticStructureUndulatorPlane import MagneticStructureUndulatorPlane
+from pySRU.TrajectoryFactory import TrajectoryFactory
+from pySRU.RadiationFactory import TRAJECTORY_METHOD_ANALYTIC, TRAJECTORY_METHOD_ODE
+from pySRU.RadiationFactory import RadiationFactory
+from pySRU.RadiationFactory import RADIATION_METHOD_NEAR_FIELD, RADIATION_METHOD_APPROX_FARFIELD
 
 class WOPySRULightSource(LightSource, LightSourceDecorator):
     def __init__(self,
                  name                = "Undefined",
                  electron_beam       = None,
                  magnetic_structure  = None,
+                 number_of_trajectory_points = 5000,
+                 traj_method         = TRAJECTORY_METHOD_ODE,
+                 rad_method          = RADIATION_METHOD_APPROX_FARFIELD,
                  ):
 
 
@@ -27,14 +37,23 @@ class WOPySRULightSource(LightSource, LightSourceDecorator):
             'h_slit_points'    : 51,
             'v_slit_points'    : 51,
             'flag_send_wavefront_dimension' : 0, # 0=2D wavefront, 1=H wawefront, 2=V wavefront (for python script)
+            'number_of_trajectory_points'   : number_of_trajectory_points,
+            'traj_method'                   : traj_method,
+            'rad_method'                    : rad_method,
             }
 
 
         self._dimension =  2
+        self._number_of_trajectory_points = number_of_trajectory_points
+        self._traj_method = traj_method
+        self._rad_method = rad_method
 
         self._set_support_text([
                     # ("name"      ,           "to define ", "" ),
-                    ("dimension"      , "dimension ", "" ),
+                    ("dimension"      ,             "dimension ", "" ),
+                    ("number_of_trajectory_points", "number_of_trajectory_points ", ""),
+                    ("traj_method",                 "traj_method ", ""),
+                    ("rad_method"      ,            "rad_method ", "" ),
             ] )
 
 
@@ -54,6 +73,9 @@ class WOPySRULightSource(LightSource, LightSourceDecorator):
                                  h_slit_points=51,
                                  v_slit_points=51,
                                  flag_send_wavefront_dimension=0,
+                                 number_of_trajectory_points=5000,
+                                 traj_method=TRAJECTORY_METHOD_ODE,
+                                 rad_method=RADIATION_METHOD_APPROX_FARFIELD,
                                  ):
 
 
@@ -64,7 +86,11 @@ class WOPySRULightSource(LightSource, LightSourceDecorator):
                                  magnetic_structure=Undulator(
                                      K_vertical=K_vertical,
                                      period_length=period_length,
-                                     number_of_periods=number_of_periods))
+                                     number_of_periods=number_of_periods),
+                                 number_of_trajectory_points=number_of_trajectory_points,
+                                 traj_method=traj_method,
+                                 rad_method=rad_method,
+                                 )
 
         out.set_source_wavefront_parameters(distance=distance,
                                             gapH=gapH,
@@ -142,7 +168,11 @@ class WOPySRULightSource(LightSource, LightSourceDecorator):
         txt += "\n    gapV=%g," % self.__source_wavefront_parameters['gapV']
         txt += "\n    photon_energy=%g," % self.__source_wavefront_parameters['photon_energy']
         txt += "\n    h_slit_points=%d," % self.__source_wavefront_parameters['h_slit_points']
-        txt += "\n    v_slit_points=%d,)" % self.__source_wavefront_parameters['v_slit_points']
+        txt += "\n    v_slit_points=%d," % self.__source_wavefront_parameters['v_slit_points']
+        txt += "\n    number_of_trajectory_points=%d," % self.__source_wavefront_parameters['number_of_trajectory_points']
+        txt += "\n    traj_method=%d, # 0=TRAJECTORY_METHOD_ANALYTIC, 1=TRAJECTORY_METHOD_ODE" % self.__source_wavefront_parameters['traj_method']
+        txt += "\n    rad_method=%d, # 0=RADIATION_METHOD_NEAR_FIELD, 1= RADIATION_METHOD_APPROX, 2=RADIATION_METHOD_APPROX_FARFIELD" % self.__source_wavefront_parameters['rad_method']
+        txt += "\n    )"
 
         if self.__source_wavefront_parameters['flag_send_wavefront_dimension'] == 0:
             txt += "\n\noutput_wavefront = light_source.get_wavefront()"
@@ -154,14 +184,6 @@ class WOPySRULightSource(LightSource, LightSourceDecorator):
         return txt
 
     def calculate_undulator_emission(self):
-
-        from pySRU.Simulation import create_simulation
-        from pySRU.ElectronBeam import ElectronBeam as PySruElectronBeam
-        from pySRU.MagneticStructureUndulatorPlane import MagneticStructureUndulatorPlane
-        from pySRU.TrajectoryFactory import TrajectoryFactory
-        from pySRU.RadiationFactory import TRAJECTORY_METHOD_ANALYTIC, TRAJECTORY_METHOD_ODE
-        from pySRU.RadiationFactory import RadiationFactory
-        from pySRU.RadiationFactory import RADIATION_METHOD_NEAR_FIELD, RADIATION_METHOD_APPROX_FARFIELD
 
         distance        = self.__source_wavefront_parameters['distance']
         gapH            = self.__source_wavefront_parameters['gapH']
@@ -192,16 +214,10 @@ class WOPySRULightSource(LightSource, LightSourceDecorator):
                                             initial_condition=None, distance=distance, XY_are_list=False,
                                             X=hArray, Y=vArray)
 
-        # simulation_test.radiation.plot("title=photon energy = %f"%eArray[ie])
         intensArray = simulation_test.radiation.intensity.copy()
 
-        # TODO: this is not nice: I redo the calculations because I need the electric vectors to get wavefront.
-        #       this should be avoided after refactoring pySRU to include electric field in simulations!!
-        electric_field = simulation_test.radiation_fact.calculate_electrical_field(
-            simulation_test.trajectory, simulation_test.source, H, V, distance)
-
-        E = electric_field._electrical_field
-        # pol_deg1 = (np.abs(E[:, 0]) / (np.abs(E[:, 0]) + np.abs(E[:, 1]))).flatten()  # SHADOW definition!!
+        electric_field = simulation_test.electric_field
+        E = electric_field._electrical_field.copy()
 
         II = numpy.sum(numpy.abs(E) ** 2, axis=-1)
 
@@ -235,3 +251,6 @@ if __name__ == "__main__":
 
     from srxraylib.plot.gol import plot_image
     plot_image(wf.get_intensity(), wf.get_coordinate_x(), wf.get_coordinate_y())
+    # plot_image(iint, x, y, title="pySRU")
+    # plot_image(II, x, y, title="Me")
+    print(pp.to_python_code())
