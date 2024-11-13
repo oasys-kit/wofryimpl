@@ -165,6 +165,7 @@ class WOLens(Lens, OpticalElementDecorator):
         else:
             raise Exception("Not implemented surface shape")
 
+        #     :param _shape: 1- parabolic, 2- circular (spherical), 3- elliptical (not implemented), 4- Cartesian oval (not implemented)
         if isinstance(self.get_surface_shape(index=0), Paraboloid):
             _shape = 1
         elif isinstance(self.get_surface_shape(index=0), Plane):  # for the moment treated as large parabola

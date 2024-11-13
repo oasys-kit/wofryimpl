@@ -11,7 +11,7 @@ except AttributeError:
 
 NAME = 'wofryimpl'
 
-VERSION = '1.0.28'
+VERSION = '1.0.29'
 ISRELEASED = True
 
 DESCRIPTION = 'WOFRY (Wave Optics FRamework in pYthon) standard implementation'
@@ -49,9 +49,9 @@ CLASSIFIERS = (
 )
 
 INSTALL_REQUIRES = (
-    'wofry>=1.0.31',
+    'wofry>=1.0.33',
     'pySRU>=0.5.5',
-    'oasys-barc4ro',
+    'oasys-barc4ro>=2024.11.13',
     'numba',
 )
 
