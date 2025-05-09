@@ -9,8 +9,13 @@ from wofry.propagator.propagator import PropagationManager
 def initialize_default_propagator_2D():
     propagator = PropagationManager.Instance()
 
-    propagator.add_propagator(Fraunhofer2D())
-    propagator.add_propagator(Fresnel2D())
-    propagator.add_propagator(FresnelConvolution2D())
-    propagator.add_propagator(Integral2D())
-    propagator.add_propagator(FresnelZoomXY2D())
+    try: propagator.add_propagator(Fraunhofer2D())
+    except Exception as e: print(e)
+    try: propagator.add_propagator(Fresnel2D())
+    except Exception as e: print(e)
+    try: propagator.add_propagator(FresnelConvolution2D())
+    except Exception as e: print(e)
+    try: propagator.add_propagator(Integral2D())
+    except Exception as e: print(e)
+    try: propagator.add_propagator(FresnelZoomXY2D())
+    except Exception as e: print(e)

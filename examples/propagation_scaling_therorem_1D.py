@@ -5,6 +5,7 @@ from syned.beamline.shape import Rectangle
 from wofry.propagator.propagator import PropagationManager, PropagationElements, PropagationParameters
 from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
 
+from wofryimpl.propagator.propagators1D import initialize_default_propagator_1D
 from wofryimpl.propagator.propagators1D.fresnel import Fresnel1D
 from wofryimpl.propagator.propagators1D.fresnel_convolution import FresnelConvolution1D
 from wofryimpl.propagator.propagators1D.fraunhofer import Fraunhofer1D
@@ -15,18 +16,6 @@ from wofryimpl.beamline.optical_elements.ideal_elements.screen import WOScreen
 from wofryimpl.beamline.optical_elements.absorbers.slit import WOSlit1D
 
 from srxraylib.plot.gol import plot
-
-
-def initialize_default_propagator_1D():
-    propagator = PropagationManager.Instance()
-
-    propagator.add_propagator(Fraunhofer1D())
-    propagator.add_propagator(Fresnel1D())
-    propagator.add_propagator(FresnelConvolution1D())
-    propagator.add_propagator(Integral1D())
-    propagator.add_propagator(FresnelZoom1D())
-    propagator.add_propagator(FresnelZoomScaling1D())
-
 
 def propagate_wavefront(wavefront,distance,handler_name=Fresnel1D.HANDLER_NAME,zoom=0.005):
 
