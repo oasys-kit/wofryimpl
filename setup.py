@@ -52,6 +52,7 @@ INSTALL_REQUIRES = (
     'wofry>=1.0.33',
     'pySRU>=0.5.5',
     'oasys-barc4ro>=2024.12.20',
+    'dabax',
     'numba',
 )
 

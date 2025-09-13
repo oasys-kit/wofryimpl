@@ -1,7 +1,8 @@
 import numpy
 from scipy.interpolate import interp2d
 import scipy.constants as codata
-import xraylib
+
+from wofryimpl.util import materials_library as ml
 
 from syned.beamline.optical_element import OpticalElement
 
@@ -77,19 +78,19 @@ class WOThinObject(ThinObject, OpticalElementDecorator):
 
         if self.get_material() == "Be": # Be
             element = "Be"
-            density = xraylib.ElementDensity(4)
+            density = ml.ElementDensity(4)
         elif self.get_material() == "Al": # Al
             element = "Al"
-            density = xraylib.ElementDensity(13)
+            density = ml.ElementDensity(13)
         elif self.get_material() == "Diamond": # Diamond
             element = "C"
             density = 3.51
         else:
             raise Exception("Bad material: " + self.get_material())
 
-        refraction_index = xraylib.Refractive_Index(element, photon_energy/1000, density)
+        refraction_index = ml.Refractive_Index(element, photon_energy/1000, density)
         refraction_index_delta = 1 - refraction_index.real
-        att_coefficient = 4*numpy.pi * (xraylib.Refractive_Index(element, photon_energy/1000, density)).imag / wave_length
+        att_coefficient = 4*numpy.pi * (ml.Refractive_Index(element, photon_energy/1000, density)).imag / wave_length
 
         return refraction_index_delta, att_coefficient
 
@@ -176,22 +177,22 @@ class WOThinObject1D(ThinObject, OpticalElementDecorator):
 
         if self.get_material() == "Be": # Be
             element = "Be"
-            density = xraylib.ElementDensity(4)
+            density = ml.ElementDensity(4)
         elif self.get_material() == "Al": # Al
             element = "Al"
-            density = xraylib.ElementDensity(13)
+            density = ml.ElementDensity(13)
         elif self.get_material() == "Diamond": # Diamond
             element = "C"
             density = 3.51
         else:
             raise Exception("Bad material: " + self.get_material())
 
-        refraction_index = xraylib.Refractive_Index(element, photon_energy/1000, density)
+        refraction_index = ml.Refractive_Index(element, photon_energy/1000, density)
         refraction_index_delta = 1 - refraction_index.real
-        att_coefficient = 4*numpy.pi * (xraylib.Refractive_Index(element, photon_energy/1000, density)).imag / wave_length
+        att_coefficient = 4*numpy.pi * (ml.Refractive_Index(element, photon_energy/1000, density)).imag / wave_length
 
         if False:
-            print("\n\n\n ==========  parameters recovered from xraylib : ")
+            print("\n\n\n ==========  parameters recovered from materials library: ")
             print("Element: %s" % element)
             print("        density = %g " % density)
             print("Photon energy = %g eV" % (photon_energy))
