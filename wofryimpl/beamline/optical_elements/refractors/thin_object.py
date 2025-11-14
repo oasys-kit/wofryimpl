@@ -1,5 +1,6 @@
 import numpy
-from scipy.interpolate import interp2d
+#from scipy.interpolate import interp2d
+from scipy.interpolate import RectBivariateSpline
 import scipy.constants as codata
 
 from wofryimpl.util import materials_library as ml
@@ -99,10 +100,12 @@ class WOThinObject(ThinObject, OpticalElementDecorator):
 
         if zz.min() < 0: zz -= zz.min()
 
-        f = interp2d(xx, yy, zz, kind='linear', bounds_error=False, fill_value=0)
+        #f = interp2d(xx, yy, zz, kind='linear', bounds_error=False, fill_value=0)
+        f = RectBivariateSpline(xx, yy, zz, kx=1, ky=1)
         x = wavefront.get_coordinate_x()
         y = wavefront.get_coordinate_y()
         interpolated_profile = f(x, y)
+
         return x, y, interpolated_profile
 
     def applyOpticalElement(self, wavefront, parameters=None, element_index=None):
