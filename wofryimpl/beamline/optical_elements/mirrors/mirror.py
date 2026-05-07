@@ -1,3 +1,6 @@
+"""
+WOMirror1D — wofry 1-D mirror with conic-surface height profile and Huygens-integral propagation.
+"""
 import numpy
 from syned.beamline.optical_elements.mirrors.mirror import Mirror
 

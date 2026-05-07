@@ -1,0 +1,8 @@
+sphinx
+sphinx_rtd_theme
+numpy
+scipy
+h5py
+syned
+wofry
+srxraylib

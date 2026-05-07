@@ -1,3 +1,6 @@
+"""
+WOLightSourcePySRU — wofry undulator light source using pySRU for coherent-mode-decomposition wavefront generation.
+"""
 import numpy
 from syned.storage_ring.light_source import LightSource
 from syned.storage_ring.electron_beam import ElectronBeam

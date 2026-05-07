@@ -1,5 +1,6 @@
-
-
+"""
+FresnelZoomScalingTheorem1D — 1-D zoomed Fresnel propagator based on the scaling theorem (magnification-preserving FFT).
+"""
 import numpy
 
 from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D

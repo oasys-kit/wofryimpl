@@ -1,9 +1,8 @@
-#
-#   propagate_2D_fraunhofer: Far field Fraunhofer propagator. TODO: Check phases, not to be used for downstream propagation
-#
-#    The fraunhoffer method cannot be used in a compound system (more than one element) and in connection with lenses
-#
+"""
+Fraunhofer2D — 2-D far-field (Fraunhofer) propagator via 2-D FFT.
 
+Note: phases are approximate; not suitable for compound beamlines or in combination with lenses.
+"""
 import numpy
 
 from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D

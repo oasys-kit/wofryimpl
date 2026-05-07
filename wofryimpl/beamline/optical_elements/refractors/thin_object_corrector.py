@@ -1,3 +1,6 @@
+"""
+WOThinObjectCorrector — wofry thin-object corrector applying a phase/amplitude correction grid to the wavefront.
+"""
 import numpy
 
 from wofryimpl.beamline.optical_elements.refractors.thin_object import WOThinObject, WOThinObject1D

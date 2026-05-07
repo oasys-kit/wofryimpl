@@ -1,4 +1,6 @@
-
+"""
+WOBeamStopper — wofry beam-stopper (negative aperture) for 2D and 1D wavefronts.
+"""
 from syned.beamline.optical_elements.absorbers.beam_stopper import BeamStopper
 from syned.beamline.shape import BoundaryShape, Rectangle, Circle, Ellipse
 

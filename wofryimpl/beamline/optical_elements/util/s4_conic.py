@@ -1,4 +1,6 @@
-
+"""
+S4Conic — conic-section optical surface (sphere, ellipsoid, paraboloid, hyperboloid, plane) for wofryimpl mirrors.
+"""
 import numpy
 
 from wofryimpl.beamline.optical_elements.util.s4_optical_surface import S4OpticalSurface

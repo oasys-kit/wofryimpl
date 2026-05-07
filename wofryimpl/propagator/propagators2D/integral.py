@@ -1,5 +1,6 @@
-#   propagate_2D_integral: Simplification of the Kirchhoff-Fresnel integral. TODO: Very slow and give some problems
-
+"""
+Integral2D — 2-D Kirchhoff-Fresnel integral propagator (direct numerical integration; slow).
+"""
 import numpy
 
 from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D

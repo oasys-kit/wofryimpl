@@ -1,4 +1,6 @@
-
+"""
+S4OpticalSurface — abstract base class for optical surface shapes used in wofryimpl mirror elements.
+"""
 # abstract class defining the interfaces of the optical surfaces to be implemented in the children classes
 # it also defines common utilities
 import numpy

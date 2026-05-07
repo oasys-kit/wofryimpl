@@ -1,3 +1,6 @@
+"""
+WOBeamline — wofry beamline container with per-element propagation parameters.
+"""
 from syned.beamline.beamline import Beamline
 
 

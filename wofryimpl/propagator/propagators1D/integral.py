@@ -1,3 +1,6 @@
+"""
+Integral1D — 1-D Kirchhoff-Fresnel integral propagator (direct numerical integration, slow but accurate).
+"""
 import numpy
 
 from srxraylib.util.data_structures import ScaledArray

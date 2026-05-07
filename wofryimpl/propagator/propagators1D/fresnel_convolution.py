@@ -1,3 +1,6 @@
+"""
+FresnelConvolution1D — 1-D near-field Fresnel propagator using direct spatial-domain convolution (scipy.signal.fftconvolve).
+"""
 import numpy
 
 from srxraylib.util.data_structures import ScaledArray

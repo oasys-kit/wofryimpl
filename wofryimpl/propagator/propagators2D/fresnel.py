@@ -1,23 +1,9 @@
-#   propagate_2D_fresnel               \
-#   propagate_2D_fresnel_convolution   | Near field Fresnel propagators via convolution in Fourier space.
-#
-#          two methods available: 'fft': fft -> multiply by kernel in freq -> ifft
-#                                   'convolution': scipy.signal.fftconvolve(wave,kernel in space)
-#
-#
-#
-# *********************************** IMPORTANT *******************************************
-#                RECOMMENDATIONS:
-#
-#     >>> Prefer propagate_2D_fresnel <<<
-#       Prefer EVEN number of bins.
-#       Set shift_half_pixel=1 (now the default)
-#    Under these circumstances, the results agree very well with SRW
-#
-#
-#
+"""
+Fresnel2D — 2-D near-field Fresnel propagator using FFT-based transfer-function convolution.
 
-
+Recommendations: use an even number of bins and ``shift_half_pixel=1`` (the default) for
+best agreement with SRW results.
+"""
 import numpy
 
 from wofry.propagator.wavefront2D.generic_wavefront import GenericWavefront2D

@@ -1,3 +1,6 @@
+"""
+Fresnel1D — 1-D near-field Fresnel propagator using FFT-based convolution with the transfer function.
+"""
 import numpy
 
 from srxraylib.util.data_structures import ScaledArray

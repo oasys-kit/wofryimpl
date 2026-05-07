@@ -1,3 +1,6 @@
+"""
+WOThinObject — wofry thin-object approximation applying a complex transmission from a refractive-index profile.
+"""
 import numpy
 #from scipy.interpolate import interp2d
 from scipy.interpolate import RectBivariateSpline

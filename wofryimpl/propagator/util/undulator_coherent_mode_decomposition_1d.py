@@ -1,3 +1,6 @@
+"""
+UndulatorCoherentModeDecomposition1D — pySRU-based 1-D coherent-mode decomposition of undulator radiation.
+"""
 import numpy as np
 
 # needed by pySRU

@@ -1,5 +1,6 @@
-
-
+"""
+FresnelZoom1D — 1-D zoomed Fresnel propagator allowing an arbitrary output sampling window via chirp-z resampling.
+"""
 import numpy
 
 from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D

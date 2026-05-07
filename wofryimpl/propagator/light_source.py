@@ -1,3 +1,6 @@
+"""
+WOLightSource — wofry light source producing Gaussian, plane or spherical wavefronts (1D and 2D).
+"""
 import numpy
 
 from syned.storage_ring.light_source import LightSource

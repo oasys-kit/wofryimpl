@@ -1,23 +1,6 @@
-#   propagate_2D_fresnel               \
-#   propagate_2D_fresnel_convolution   | Near field Fresnel propagators via convolution in Fourier space.
-#
-#          two methods available: 'fft': fft -> multiply by kernel in freq -> ifft
-#                                   'convolution': scipy.signal.fftconvolve(wave,kernel in space)
-#
-#
-#
-# *********************************** IMPORTANT *******************************************
-#                RECOMMENDATIONS:
-#
-#     >>> Prefer propagate_2D_fresnel <<<
-#       Prefer EVEN number of bins.
-#       Set shift_half_pixel=1 (now the default)
-#    Under these circumstances, the results agree very well with SRW
-#
-#
-#
-
-
+"""
+FresnelZoomXY2D — 2-D zoomed Fresnel propagator with independent zoom factors in x and y.
+"""
 import numpy
 import scipy.constants as codata
 

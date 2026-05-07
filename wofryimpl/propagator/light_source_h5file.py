@@ -1,3 +1,6 @@
+"""
+WOLightSourceH5File — wofry light source that loads a pre-computed wavefront from an HDF5 file.
+"""
 import numpy
 from syned.storage_ring.light_source import LightSource
 

@@ -1,4 +1,6 @@
-
+"""
+WOLens — wofry refractive lens (CRL) applying a complex transmission function to the wavefront.
+"""
 import numpy
 from syned.beamline.optical_elements.refractors.lens import Lens
 

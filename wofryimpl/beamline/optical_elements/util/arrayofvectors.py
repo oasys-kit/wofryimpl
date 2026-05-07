@@ -1,3 +1,6 @@
+"""
+Array-of-vectors utilities — element-wise cross, dot and normalisation operations on (N, 3) numpy arrays.
+"""
 # operations with an array of 3D vectors, v[n_vectors,3]
 
 import numpy

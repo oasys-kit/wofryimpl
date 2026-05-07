@@ -1,3 +1,6 @@
+"""
+Tally — utility class for accumulating and plotting coherent-mode wavefront intensities.
+"""
 import numpy
 from srxraylib.plot.gol import plot, plot_image
 import matplotlib.pylab as plt

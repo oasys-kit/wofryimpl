@@ -1,4 +1,6 @@
-
+"""
+Fraunhofer1D — 1-D far-field (Fraunhofer) propagator implemented via a single FFT.
+"""
 import numpy
 
 from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D

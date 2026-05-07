@@ -1,5 +1,5 @@
 """
-Represents an ideal lens.
+WOScreen — wofry ideal screen (pass-through optical element) for 2D and 1D wavefronts.
 """
 from syned.beamline.optical_elements.ideal_elements.screen import Screen
 from wofry.beamline.decorators import OpticalElementDecorator

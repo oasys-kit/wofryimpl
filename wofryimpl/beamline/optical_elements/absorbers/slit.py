@@ -1,4 +1,6 @@
-
+"""
+WOSlit — wofry slit aperture supporting rectangular, circular, elliptical and multi-patch boundaries.
+"""
 import numpy
 
 from syned.beamline.optical_elements.absorbers.slit import Slit
