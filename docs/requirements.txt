@@ -3,6 +3,7 @@ sphinx_rtd_theme
 numpy
 scipy
 h5py
+matplotlib
 syned
 wofry
 srxraylib
