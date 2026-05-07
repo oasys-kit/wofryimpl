@@ -518,17 +518,27 @@ class S4Conic(S4OpticalSurface):
 
     def height(self,y=0,x=0,return_solution=0):
         """
+        Compute the surface height z for given transverse coordinates.
 
-        :param y: a scalar, vector or mesh
-        :param x: a scalar, vector or mesh
-            y and x must be homogeneous, otherwise an error will occur:
-             both scalars
-             both mesh
-             one scalar and another vector
-        :param return_solution: 0 = guess the solution with zero at pole,
-                                1 = get first solution
-                                2 = get second solution
-        :return: the height scalar/vector/mesh depending on inputs
+        Parameters
+        ----------
+        y : float or array_like
+            Coordinate along the tangential (length) axis [m].  Must be
+            homogeneous with ``x`` (both scalars, both vectors, or one
+            scalar and the other a vector).
+        x : float or array_like
+            Coordinate along the sagittal (width) axis [m].
+        return_solution : int, optional
+            Which root of the conic equation to return:
+
+            * 0 (default) — the root closest to zero at the pole.
+            * 1 — first root (positive sign).
+            * 2 — second root (negative sign).
+
+        Returns
+        -------
+        float or numpy.ndarray
+            Surface height z(x, y) [m].
         """
         aa = self.ccc[2]
         bb = self.ccc[4] * y + self.ccc[5] * x + self.ccc[8]
@@ -559,8 +569,12 @@ class S4Conic(S4OpticalSurface):
     #
     def info(self):
         """
+        Return a human-readable summary of the conic coefficients.
 
-        :return:
+        Returns
+        -------
+        str
+            Multi-line string showing the ten conic equation coefficients.
         """
         txt = ""
 

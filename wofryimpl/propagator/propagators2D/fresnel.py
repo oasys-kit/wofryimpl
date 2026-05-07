@@ -22,15 +22,26 @@ class Fresnel2D(Propagator2D):
     def do_specific_progation_before(self, wavefront, propagation_distance, parameters, element_index=None):
         return self.do_specific_progation( wavefront, propagation_distance, parameters, element_index=element_index)
 
-    """
-    2D Fresnel propagator using convolution via Fourier transform
-    :param wavefront:
-    :param propagation_distance: propagation distance
-    :param shift_half_pixel: set to 1 to shift half pixel (recommended using an even number of pixels) Set as default.
-    :return: a new 2D wavefront object with propagated wavefront
-    """
-
     def do_specific_progation(self, wavefront, propagation_distance, parameters, element_index=None):
+        """
+        Propagate a 2-D wavefront using the Fresnel (near-field) FFT transfer-function method.
+
+        Parameters
+        ----------
+        wavefront : GenericWavefront2D
+            Input wavefront.
+        propagation_distance : float
+            Propagation distance [m].
+        parameters : PropagationParameters
+            Propagation parameter container (may include ``shift_half_pixel``).
+        element_index : int, optional
+            Index of the beamline element being propagated through.
+
+        Returns
+        -------
+        GenericWavefront2D
+            Propagated wavefront on the same spatial grid.
+        """
 
         shift_half_pixel = self.get_additional_parameter("shift_half_pixel",False,parameters,element_index=element_index)
 

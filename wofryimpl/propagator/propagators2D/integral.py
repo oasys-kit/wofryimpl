@@ -21,27 +21,37 @@ class Integral2D(Propagator2D):
     def do_specific_progation_before(self, wavefront, propagation_distance, parameters, element_index=None):
         return self.do_specific_progation( wavefront, propagation_distance, parameters, element_index=element_index)
 
-    """
-    2D Fresnel-Kirchhoff propagator via simplified integral
-
-    NOTE: this propagator is experimental and much less performant than the ones using Fourier Optics
-          Therefore, it is not recommended to use.
-
-    :param wavefront:
-    :param propagation_distance: propagation distance
-    :param shuffle_interval: it is known that this method replicates the central diffraction spot
-                            The distace of the replica is proportional to 1/pixelsize
-                            To avoid that, it is possible to change a bit (randomly) the coordinates
-                            of the wavefront. shuffle_interval controls this shift: 0=No shift. A typical
-                             value can be 1e5.
-                             The result shows a diffraction pattern without replica but with much noise.
-    :param calculate_grid_only: if set, it calculates only the horizontal and vertical profiles, but returns the
-                             full image with the other pixels to zero. This is useful when calculating large arrays,
-                             so it is set as the default.
-    :return: a new 2D wavefront object with propagated wavefront
-    """
-
     def do_specific_progation(self, wavefront, propagation_distance, parameters, element_index=None):
+        """
+        Propagate a 2-D wavefront by numerical evaluation of the Kirchhoff-Fresnel integral.
+
+        This propagator is experimental and far slower than the FFT-based methods;
+        use it only for validation purposes.
+
+        Parameters
+        ----------
+        wavefront : GenericWavefront2D
+            Input wavefront.
+        propagation_distance : float
+            Propagation distance [m].
+        parameters : PropagationParameters
+            Propagation parameter container.  Recognised keys:
+
+            * ``shuffle_interval`` (float, default 0) — randomly perturb source
+              coordinates by this amount to suppress replica diffraction spots
+              (a value of ~1e5 is typical; introduces noise).
+            * ``calculate_grid_only`` (bool, default True) — compute only the
+              horizontal and vertical cross-sections and set all other pixels
+              to zero (much faster for large arrays).
+            * ``magnification_x``, ``magnification_y`` (float, default 1.0).
+        element_index : int, optional
+            Index of the beamline element being propagated through.
+
+        Returns
+        -------
+        GenericWavefront2D
+            Propagated wavefront.
+        """
 
         shuffle_interval = self.get_additional_parameter("shuffle_interval",False,parameters,element_index=element_index)
         calculate_grid_only = self.get_additional_parameter("calculate_grid_only",True,parameters,element_index=element_index)

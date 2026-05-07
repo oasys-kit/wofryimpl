@@ -92,19 +92,23 @@ class S4OpticalSurface(object):
 # copied from shadow3 ShadowTools
 def write_shadow_surface(s, xx, yy, outFile='presurface.dat'):
     """
-      write_shadowSurface: writes a mesh in the SHADOW/presurface format
-      SYNTAX:
-           out = write_shadowSurface(z,x,y,outFile=outFile)
-      INPUTS:
-           z - 2D array of heights
-           x - 1D array of spatial coordinates along mirror width.
-           y - 1D array of spatial coordinates along mirror length.
+    Write a 2-D height mesh to disk in the SHADOW *presurface* format.
 
-      OUTPUTS:
-           out - 1=Success, 0=Failure
-           outFile - output file in SHADOW format. If undefined, the
-                     file is names "presurface.dat"
+    Parameters
+    ----------
+    s : numpy.ndarray, shape (Nx, Ny)
+        2-D array of surface heights [m].
+    xx : numpy.ndarray, shape (Nx,)
+        Spatial coordinates along the mirror width (sagittal axis) [m].
+    yy : numpy.ndarray, shape (Ny,)
+        Spatial coordinates along the mirror length (tangential axis) [m].
+    outFile : str, optional
+        Path to the output file. Default ``'presurface.dat'``.
 
+    Returns
+    -------
+    int
+        1 on success, 0 on failure.
     """
     out = 1
 

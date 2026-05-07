@@ -19,16 +19,28 @@ class Fraunhofer1D(Propagator1D):
     def do_specific_progation_before(self, wavefront, propagation_distance, parameters, element_index=None):
         return self.do_specific_progation( wavefront, propagation_distance, parameters, element_index=element_index)
 
-    """
-    1D Fraunhofer propagator using convolution via Fourier transform
-    :param wavefront:
-    :param propagation_distance: propagation distance. If set to zero, the abscissas
-                                 of the returned wavefront are in angle (rad)
-    :return: a new 1D wavefront object with propagated wavefront
-    """
-
     # TODO: check resulting amplitude normalization
     def do_specific_progation(self, wavefront, propagation_distance, parameters, element_index=None):
+        """
+        Propagate a 1-D wavefront using the Fraunhofer (far-field) approximation.
+
+        Parameters
+        ----------
+        wavefront : GenericWavefront1D
+            Input wavefront.
+        propagation_distance : float
+            Propagation distance [m]. If zero, the output abscissas are in
+            angle [rad].
+        parameters : PropagationParameters
+            Propagation parameter container (may include ``shift_half_pixel``).
+        element_index : int, optional
+            Index of the beamline element being propagated through.
+
+        Returns
+        -------
+        GenericWavefront1D
+            Propagated wavefront on the far-field grid.
+        """
 
         shift_half_pixel = self.get_additional_parameter("shift_half_pixel",False,parameters,element_index=element_index)
 
