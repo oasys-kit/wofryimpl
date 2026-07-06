@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 
-from importlib.machinery import SourceFileLoader
 import os
-import subprocess
 
 try:
     from setuptools import find_packages, setup
@@ -11,7 +9,7 @@ except AttributeError:
 
 NAME = 'wofryimpl'
 
-VERSION = '1.0.35'
+VERSION = '1.0.36'
 ISRELEASED = True
 
 DESCRIPTION = 'WOFRY (Wave Optics FRamework in pYthon) standard implementation'
