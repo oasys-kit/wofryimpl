@@ -72,21 +72,44 @@ def hyp1f1_series_small(a, b, z, terms=20):
             break
     return result
 
+# FIX (bug #6, 2026): cache of (Gamma(a), Gamma(1-a)) used by the asymptotic branch of
+# fast_hyp1f1; a = 1j*kap is fixed for a given crystal configuration, so the two mpmath
+# gamma evaluations are paid only once.
+_GAMMA_CACHE = {}
+
+def _cached_gammas(a):
+    key = complex(a)
+    if key not in _GAMMA_CACHE:
+        _GAMMA_CACHE[key] = (complex(mpmath.gamma(key)), complex(mpmath.gamma(1 - key)))
+    return _GAMMA_CACHE[key]
+
 def fast_hyp1f1(kap, yprime):
     """
     Fast evaluation of the Kummer function M(i*kap, 1, i*yprime).
 
     Chooses the cheapest accurate method for the magnitude of the argument:
     a first-order expansion for |yprime| < 1e-8, the power series
-    (:func:`hyp1f1_series_small`) for |yprime| < 5, the large-argument
-    asymptotic form for |yprime| > 100, and ``mpmath.hyp1f1`` in between. It is
-    a drop-in replacement for ``mpmath.hyp1f1(1j*kap, 1, 1j*yprime)`` used when
-    ``use_fast_hyp1f1`` is enabled.
+    (:func:`hyp1f1_series_small`) when it converges safely, the two-term
+    large-argument asymptotic form when its error is below ~1e-3, and
+    ``mpmath.hyp1f1`` otherwise. It is a drop-in replacement for
+    ``mpmath.hyp1f1(1j*kap, 1, 1j*yprime)`` used when ``use_fast_hyp1f1`` is
+    enabled.
+
+    FIX (bug #6, 2026): the previous version was wrong in two regimes.
+    (i) Large |yprime|: it kept a single (scrambled) asymptotic term, but for
+    a purely imaginary argument z = i*y BOTH terms of the asymptotic expansion
+    M(a,1,z) ~ (-z)^(-a)/Gamma(1-a) + e^z z^(a-1)/Gamma(a)  [DLMF 13.7.2]
+    are of comparable magnitude -- they are the two Borrmann branches -- so
+    dropping one changed the predicted focusing completely (the foci appeared
+    at the alpha-mirrored positions). (ii) Small |yprime| but large |kap|
+    (small asymmetry angles): the 20-term series does not converge for
+    |kap*yprime| >~ 20 and produced garbage. Both branches are now guarded and
+    fall back to mpmath when their accuracy is not guaranteed.
 
     Parameters
     ----------
-    kap : float
-        Real Kummer parameter beta = Omega / A.
+    kap : complex
+        Kummer parameter beta = Omega / A (complex in general).
     yprime : float
         Real argument y' = A*gamma*(a^2 - v^2)/sin^2(2 theta_B).
 
@@ -95,23 +118,30 @@ def fast_hyp1f1(kap, yprime):
     complex
         The value of M(i*kap, 1, i*yprime).
     """
-    yp_abs = abs(yprime)
+    kap = complex(kap)
+    y = float(yprime)
+    yp_abs = abs(y)
 
     if yp_abs < 1e-8:
-        return 1.0 + 1j * (kap * yprime)
+        return 1.0 + 1j * (kap * y)
 
-    elif yp_abs < 5:
-        # Series expansion for small arguments
-        return hyp1f1_series_small(1j * kap, 1, 1j * yprime)
+    # Series expansion: the terms are bounded by ((1+|kap|)|y|)^n / n!, so the largest
+    # term is ~e^((1+|kap|)|y|) and float cancellation stays below ~1e-16*e^20 ~ 5e-8
+    # under the guard below; the term count covers the peak at n ~ (1+|kap|)|y|.
+    eff = (1 + abs(kap)) * yp_abs
+    if eff < 20:
+        return hyp1f1_series_small(1j * kap, 1, 1j * y, terms=40 + int(2 * eff))
 
-    elif yp_abs > 100:
-        # Asymptotic expansion for large arguments
-        z = 1j * yprime
-        return mpmath.exp(z) * z ** (-1j * kap) * mpmath.gamma(1 - 1j * kap) / mpmath.gamma(1)
+    if yp_abs > 100 and (abs(kap) + 1) ** 2 / yp_abs < 1e-3:
+        # Two-term asymptotic expansion, error O(|a|^2/|z|) < 1e-3 [DLMF 13.7.2 with b=1]
+        z = 1j * y
+        a = 1j * kap
+        ga, g1a = _cached_gammas(a)
+        t1 = numpy.exp(-a * numpy.log(-z)) / g1a          # (-z)^(-a) / Gamma(1-a)
+        t2 = numpy.exp(z + (a - 1) * numpy.log(z)) / ga   # e^z z^(a-1) / Gamma(a)
+        return complex(t1 + t2)
 
-    else:
-        # Original for medium range
-        return mpmath.hyp1f1(1j * kap, 1, 1j * yprime)
+    return complex(mpmath.hyp1f1(1j * kap, 1, 1j * y))
 
 class LaueCrystalFocusing():
     """
@@ -164,8 +194,12 @@ class LaueCrystalFocusing():
             integration_points : int
                 Number of points used to evaluate the propagator integrals.
             use_fast_hyp1f1 : int
-                If truthy, use :func:`fast_hyp1f1` instead of ``mpmath.hyp1f1``
-                for the Kummer function (asymmetric case only).
+                Evaluation strategy for the Kummer function (asymmetric case only):
+                0 = exact ``mpmath.hyp1f1``, point by point (original, slow);
+                1 = :func:`fast_hyp1f1` approximations, point by point (original fast);
+                2 = exact ``mpmath.hyp1f1`` computed once on the integration grid
+                and cached (FEATURE 2026, recommended: exact results, the Kummer
+                cost is paid a single time per scan or map).
             apply_absorption : bool
                 If True (default) include the normal (photoelectric) absorption
                 factor att = exp(-k*(t1+t2)/2*Im(chi0)). If False, set att = 1
@@ -295,7 +329,95 @@ class LaueCrystalFocusing():
         # decays (raw Im(chi0) < 0 in this xraylib convention). chiH and chiHbar (= chi_{-h}) are
         # returned as computed, so that chih2 = chiH*chiHbar reproduces the reference product directly
         # (Im > 0 for Si) with no conjugate "fix" needed downstream.
+        # FIX (bug #7, 2026): cast to plain python scalars. The structure factors may come out of
+        # the materials library as 1-element numpy arrays; downstream these reached
+        # mpmath.hyp1f1 (via kap = Omega/A), which raises "TypeError: cannot create mpf from
+        # array([...])", and they also propagated array-ness to every returned amplitude.
+        braggAngle = float(numpy.asarray(braggAngle).ravel()[0])
+        chi0 = complex(numpy.asarray(chi0).ravel()[0])
+        chiH = complex(numpy.asarray(chiH).ravel()[0])
+        chiHbar = complex(numpy.asarray(chiHbar).ravel()[0])
         return braggAngle, numpy.conjugate(chi0), chiH, chiHbar
+
+    # FEATURE (2026): vectorized influence function with per-instance caching.
+    def _influence_on_grid(self, v, a=None, alfa=None, k=None, teta=None, chih2=None,
+                           acrist=None, gamma=None, kap=None, **kwargs):
+        """
+        Influence function (crystal propagator amplitude) evaluated on an ARRAY
+        of transverse coordinates ``v``: the Bessel form J0(Z*sqrt(a^2-v^2)) for
+        the symmetric case (alfa == 0), or the Kummer form M(i*kap, 1, i*y')
+        with y' = acrist*gamma*(a^2-v^2)/sin^2(2*teta) for the asymmetric case.
+
+        The result is cached per instance: the influence function depends only
+        on the crystal configuration and on ``v`` -- NOT on the observation
+        coordinates x, q -- so a scan (x-scan, q-scan, 2D map, diffraction
+        profile) computes the expensive Kummer values only once and reuses them
+        for every point. This speeds up scans by orders of magnitude compared
+        to the previous per-point evaluation. The cache key hashes the ``v``
+        array and the physical parameters, so mutating the instance parameters
+        or changing the grid invalidates it naturally.
+
+        Extra keyword arguments (the rest of a ``_calculate_constats_*`` dict)
+        are ignored, so the dicts can be passed with ``**kwds`` directly.
+        """
+        v = numpy.asarray(v, dtype=float)
+        key = (v.size, hash(v.tobytes()), complex(kap) if kap is not None else None,
+               complex(chih2), float(acrist), float(gamma), float(a), float(alfa),
+               float(k), float(teta))
+        cache = getattr(self, '_influence_cache', None)
+        if cache is None:
+            cache = self._influence_cache = {}
+        if key in cache:
+            return cache[key]
+
+        arg1 = numpy.clip(a ** 2 - v ** 2, 0.0, None)
+        if alfa == 0:
+            Z = k * numpy.sqrt(complex(chih2)) / numpy.sin(2 * teta)
+            kum = BesselJ(0, Z * numpy.sqrt(arg1))
+        else:
+            # always the EXACT Kummer function (mpmath); this cached-grid path is what
+            # use_fast_hyp1f1=2 selects, and exactness is part of its contract.
+            yprime = acrist * gamma * arg1 / numpy.sin(2 * teta) ** 2
+            kum = numpy.empty(v.size, dtype=complex)
+            kk = complex(kap)
+            for i in range(v.size):
+                kum[i] = complex(mpmath.hyp1f1(1j * kk, 1, 1j * float(yprime[i])))
+
+        cache[key] = kum
+        return kum
+
+    def _influence_values(self, v, a=None, alfa=None, k=None, teta=None, chih2=None,
+                          acrist=None, gamma=None, kap=None, **kwargs):
+        """
+        Influence function on the array ``v``, dispatching on ``use_fast_hyp1f1``:
+
+        * 0 -- exact Kummer, evaluated point by point with mpmath (the original,
+          slow behaviour; no caching);
+        * 1 -- approximated Kummer via :func:`fast_hyp1f1`, point by point (the
+          original fast behaviour; no caching);
+        * 2 -- exact Kummer computed ONCE on the grid and cached
+          (:meth:`_influence_on_grid`); recommended: exact results with the
+          Kummer cost paid a single time per scan/map.
+
+        The symmetric case (alfa == 0) uses the exact (and cheap) Bessel form
+        for every mode. Extra keyword arguments are ignored so the
+        ``_calculate_constats_*`` dicts can be passed with ``**kwds``.
+        """
+        if alfa == 0 or self._use_fast_hyp1f1 == 2:
+            return self._influence_on_grid(v, a=a, alfa=alfa, k=k, teta=teta, chih2=chih2,
+                                           acrist=acrist, gamma=gamma, kap=kap)
+        v = numpy.asarray(v, dtype=float)
+        arg1 = numpy.clip(a ** 2 - v ** 2, 0.0, None)
+        yprime = acrist * gamma * arg1 / numpy.sin(2 * teta) ** 2
+        kum = numpy.empty(v.size, dtype=complex)
+        kk = complex(kap)
+        if self._use_fast_hyp1f1:  # mode 1: fast approximations
+            for i in range(v.size):
+                kum[i] = complex(fast_hyp1f1(kk, float(yprime[i])))
+        else:                      # mode 0: exact, point by point
+            for i in range(v.size):
+                kum[i] = complex(mpmath.hyp1f1(1j * kk, 1, 1j * float(yprime[i])))
+        return kum
 
     #
     # interface for q=0 or finite q
@@ -376,15 +498,9 @@ class LaueCrystalFocusing():
         print("a=%.3f mm..." % (a))
 
         xx = numpy.linspace(-a * a_factor, a * a_factor, npoints_x) - a_center
-        yy_amplitude = numpy.zeros_like(xx, dtype=complex)
 
-        print(f"Progress: 0%")
-        for j in range(xx.size):
-            progress = (j + 1) / xx.size * 100
-            if progress % 10 == 0:  print(f"Progress: {progress:.0f}%")
-            amplitude = self._equation23_2016(xx[j], **kwds)
-            yy_amplitude[j] = amplitude
-        print(f"Progress: 100%")
+        # FEATURE (2026): _equation23_2016 is vectorized; evaluate the whole grid at once.
+        yy_amplitude = numpy.asarray(self._equation23_2016(xx, **kwds), dtype=complex)
 
         # create and write wofry wavefront
         output_wavefront = GenericWavefront1D.initialize_wavefront_from_arrays(
@@ -712,25 +828,27 @@ class LaueCrystalFocusing():
         complex
             The complex amplitude D_h(x).
         """
-        if numpy.abs(x) > a: return 0
+        # FEATURE (2026): vectorized -- x may be a scalar (old behaviour) or an array.
+        # The influence function comes from the cached grid evaluator.
+        x_in = numpy.asarray(x, dtype=float)
+        scalar_input = (x_in.ndim == 0)
+        xx = numpy.atleast_1d(x_in)
 
-        if alfa == 0:
-            Z = k * numpy.sqrt(chih2) / numpy.sin(2 * teta)
-            kum = BesselJ(0, Z * numpy.sqrt(a ** 2 - x ** 2))
-        else:
-            if self._use_fast_hyp1f1:
-                kum = fast_hyp1f1(kap, acmax * (1 - (x / a) ** 2))
-            else:
-                kum = mpmath.hyp1f1(1j * kap, 1, 1j * acmax * (1 - (x / a) ** 2))
+        kum = self._influence_values(xx, a=a, alfa=alfa, k=k, teta=teta, chih2=chih2,
+                                      acrist=acrist, gamma=gamma, kap=kap)
 
         # FEATURE (2026): split the (1j*Re - Im)*chizero factor into phase (kept) and normal
         # absorption (gated). sqrt(att) is the amplitude form of att=exp(-k*0.5*(t1+t2)*Im chi0),
         # so |.|^2 reproduces att; with apply_absorption=False, att=1 leaves only the phase.
-        return numpy.exp(1j * k * chizero.real * 0.25 * (t1 + t2)) * numpy.sqrt(att) * \
-               kum * \
-               numpy.exp(-1j * x ** 2 * k * mu1 / 2 / self._R) * \
-               numpy.exp(1j * x * k * (omega.real - t1 * numpy.sin(teta1) / 2 / self._R)) * \
-               numpy.exp(- x * k * omega.imag)
+        amp = numpy.exp(1j * k * chizero.real * 0.25 * (t1 + t2)) * numpy.sqrt(att) * \
+              kum * \
+              numpy.exp(-1j * xx ** 2 * k * mu1 / 2 / self._R) * \
+              numpy.exp(1j * xx * k * (omega.real - t1 * numpy.sin(teta1) / 2 / self._R)) * \
+              numpy.exp(- xx * k * omega.imag)
+        amp = numpy.where(numpy.abs(xx) > a, 0.0, amp)
+
+        if scalar_input: return complex(amp[0])
+        return amp
 
 
 
@@ -782,29 +900,17 @@ class LaueCrystalFocusing():
         """
         #if numpy.abs(x) > a: return 0
         v = numpy.linspace(0, a, self._integration_points)
-        y = numpy.zeros_like(v, dtype=complex)
         invle = 1 / q - mu1 / self._R
         # 2026: function of the TRUE x; subtract the lateral shift x_c (eq. 25).
         xc = self._xc_equation24(q, omega=omega, t1=t1, teta1=teta1)
 
-        for i in range(v.size):
-
-            if alfa == 0:
-                Z = k * numpy.sqrt(chih2) / numpy.sin(2 * teta)
-                kum = BesselJ(0, Z * numpy.sqrt(a ** 2 - v[i] ** 2))
-            else:
-                if self._use_fast_hyp1f1:
-                    kum = fast_hyp1f1(kap, acmax * (1 - (v[i] / a) ** 2))
-                else:
-                    kum = mpmath.hyp1f1(1j * kap, 1, 1j * acmax * (1 - (v[i] / a) ** 2))
-
-            Q1 = 1j * k * 0.5 * v[i] ** 2 * invle
-            # 2026: lateral argument uses (x - xc) so the field is expressed vs the true x.
-            Q2 = k * v[i] * ((x - xc) / q - 1j * kiny)
-
-            y[i] = kum * \
-                   numpy.exp(Q1) * \
-                   numpy.cos(Q2)
+        # FEATURE (2026): vectorized over v; the influence function dispatches on use_fast_hyp1f1 (exact cached grid for mode 2).
+        kum = self._influence_values(v, a=a, alfa=alfa, k=k, teta=teta, chih2=chih2,
+                                      acrist=acrist, gamma=gamma, kap=kap)
+        Q1 = 1j * k * 0.5 * v ** 2 * invle
+        # 2026: lateral argument uses (x - xc) so the field is expressed vs the true x.
+        Q2 = k * v * ((x - xc) / q - 1j * kiny)
+        y = kum * numpy.exp(Q1) * numpy.cos(Q2)
 
         return 2 * numpy.trapezoid(y, x=v) * numpy.sqrt(att / numpy.abs(lambda1 * q))
 
@@ -846,30 +952,21 @@ class LaueCrystalFocusing():
         constants. Returns the complex amplitude D_h(x).
         """
         tau = numpy.linspace(gamma * (x - a), gamma * (x + a), self._integration_points)
-        y = numpy.zeros_like(tau, dtype=complex)
 
-        for i in range(tau.size):
-            nu = x - tau[i] / gamma
-            yprime = acmax * (1 - (nu / a) ** 2)
+        # FEATURE (2026): vectorized over tau. As tau spans [gamma*(x-a), gamma*(x+a)],
+        # nu = x - tau/gamma spans exactly [a, -a] INDEPENDENTLY of x, so the influence
+        # function is computed on the fixed grid linspace(a, -a, N) and cached: one
+        # Kummer-grid evaluation serves every x of the scan.
+        nu = numpy.linspace(a, -a, self._integration_points)
+        kum = self._influence_values(nu, a=a, alfa=alfa, k=k, teta=teta, chih2=chih2,
+                                      acrist=acrist, gamma=gamma, kap=kap)
 
-
-            if alfa == 0:
-                Z = k * numpy.sqrt(chih2) / numpy.sin(2 * teta)
-                arg1 = a ** 2 - nu ** 2
-                if arg1 < 0: arg1 = 0
-                kum = BesselJ(0, Z * numpy.sqrt(arg1))
-            else:
-                if self._use_fast_hyp1f1:
-                    kum = fast_hyp1f1(kap, yprime)
-                else:
-                    kum = mpmath.hyp1f1(1j * kap, 1, 1j * yprime)
-
-            Q1 = 1j * k * nu * omega
-            Q2 = -1j * k * (mu1 * x**2 + x * t1 * numpy.sin(teta1)) / (2 * self._R)
-            Q3 = -1j * k * (mu2 * (nu - x)**2 - a2 * gamma * (nu - x)) / (2 * self._R)
-            Q4 = 1j * k * (g / self._R) * (a + x) * (nu - x)
-            A = f_mag(tau[i]) * numpy.exp(1j * f_phase(tau[i]))
-            y[i] = A * kum * numpy.exp(Q1 + Q2 + Q3 + Q4)
+        Q1 = 1j * k * nu * omega
+        Q2 = -1j * k * (mu1 * x**2 + x * t1 * numpy.sin(teta1)) / (2 * self._R)
+        Q3 = -1j * k * (mu2 * (nu - x)**2 - a2 * gamma * (nu - x)) / (2 * self._R)
+        Q4 = 1j * k * (g / self._R) * (a + x) * (nu - x)
+        A = f_mag(tau) * numpy.exp(1j * f_phase(tau))
+        y = A * kum * numpy.exp(Q1 + Q2 + Q3 + Q4)
 
         amplitude = numpy.trapezoid(y, x=tau)
         return amplitude
@@ -1003,30 +1100,18 @@ class LaueCrystalFocusing():
         """
 
         X = numpy.linspace(-a, a, self._integration_points)
-        amplitude = numpy.zeros_like(X, dtype=complex)
 
-        for i, x in enumerate(X):
+        # FEATURE (2026): vectorized over X; the influence function dispatches on use_fast_hyp1f1 (exact cached grid for mode 2).
+        kum = self._influence_values(X, a=a, alfa=alfa, k=k, teta=teta, chih2=chih2,
+                                      acrist=acrist, gamma=gamma, kap=kap)
+        if alfa == 0:
+            Q1 = - 1j * k * X * (X + a) / (2 * self._R * numpy.cos(teta))
+            Q2 = numpy.zeros_like(X)
+        else:
+            Q1 = 1j * k * X * omega
+            Q2 = -1j * k * (mu1 * X**2 + X * t1 * numpy.sin(teta1)) / (2 * self._R)
 
-            arg1 = a ** 2 - x ** 2
-            if arg1 < 0: arg1 = 0
-
-            if alfa == 0:
-                Z = k * numpy.sqrt(chih2) / numpy.sin(2 * teta)
-                kum = BesselJ(0, Z * numpy.sqrt(arg1))
-                Q1 = - 1j * k * x * (x + a) / (2 * self._R * numpy.cos(teta))
-                Q2 = 0
-            else:
-                yprime = acrist * gamma *  arg1 / (numpy.sin(2 * teta))**2
-
-                if self._use_fast_hyp1f1:
-                    kum = fast_hyp1f1(kap, yprime)
-                else:
-                    kum = mpmath.hyp1f1(1j * kap, 1, 1j * yprime)
-                Q1 = 1j * k * x * omega
-                Q2 = -1j * k * (mu1 * x**2 + x * t1 * numpy.sin(teta1)) / (2 * self._R)
-
-            A = numpy.exp(Q1 + Q2)
-            amplitude[i] = A * kum # * numpy.exp(1j * k * x * inclination)
+        amplitude = numpy.exp(Q1 + Q2) * kum
 
         AMPLITUDE_INTEGRATED = numpy.zeros_like(THETA, dtype=complex)
         for i, inclination in enumerate(THETA):
@@ -1084,38 +1169,19 @@ class LaueCrystalFocusing():
         D_h(x).
         """
         v = numpy.linspace(-a, a, self._integration_points)
-        y = numpy.zeros_like(v, dtype=complex)
 
-        for i in range(v.size):
-            s = 0
-            mu2prime = mu2 * gamma**2
-            rho = self._poisson_ratio / (1 - self._poisson_ratio)
-            a_2 = self._thickness / numpy.cos(teta) * \
-                  (numpy.cos(alfa) * numpy.sin(teta2) + rho * numpy.sin(alfa) * numpy.cos(teta2))
+        # FEATURE (2026): vectorized over v; the influence function dispatches on use_fast_hyp1f1 (exact cached grid for mode 2).
+        kum = self._influence_values(v, a=a, alfa=alfa, k=k, teta=teta, chih2=chih2,
+                                      acrist=acrist, gamma=gamma, kap=kap)
 
-            arg1 = a ** 2 - v[i] ** 2
-            if arg1 < 0: arg1 = 0
-            yprime = acrist * gamma * (arg1) / (numpy.sin(2 * teta)) ** 2  # defined before eq 29
+        mfac = gamma / numpy.sqrt(lambda1 * self._p)
+        pe = 1 / (1 / self._p - mu2 / self._R)
+        Q1 = gamma**2 * (x - v)**2 / (2 * pe)  # quadratic
+        Q2 = -(mu1 * x**2) / (2 * self._R)
+        Q3 = -(x * t1 * numpy.sin(teta1) - a2 * gamma * (v - x)) / (2 * self._R)
+        Q4 = v * omega + g * (a + x) * (v - x) / self._R
 
-            mfac = gamma / numpy.sqrt(lambda1 * self._p)
-            pe = 1 / (1 / self._p - mu2 / self._R)
-            Q1 = gamma**2 * (x - v[i])**2 / (2 * pe)  # quadratic
-            Q2 = -(mu1 * x**2) / (2 * self._R)
-            Q3 = -(x * t1 * numpy.sin(teta1) - a2 * gamma * (v[i] - x)) / (2 * self._R)
-            Q4 = v[i] * omega + g * (a + x) * (v[i] - x) / self._R
-
-
-            Q = Q1 + Q2 + Q3 + Q4
-            if alfa == 0:
-                Z = k * numpy.sqrt(chih2) / numpy.sin(2 * teta)
-                kum = BesselJ(0, Z * numpy.sqrt(a ** 2 - v[i] ** 2))
-            else:
-                if self._use_fast_hyp1f1:
-                    kum = fast_hyp1f1(kap, yprime)
-                else:
-                    kum = mpmath.hyp1f1(1j * kap, 1, 1j * yprime)
-
-            y[i] = mfac * kum * numpy.exp(1j * k * Q)
+        y = mfac * kum * numpy.exp(1j * k * (Q1 + Q2 + Q3 + Q4))
 
         # FIX (bug #5, 2026): eq30 was missing the normal-absorption factor (it carries no chi0/att
         # term). Multiply by sqrt(att) [amplitude form of att = exp(-k*(t1+t2)/2*Im chi0)] so |.|^2
@@ -1189,7 +1255,6 @@ class LaueCrystalFocusing():
         # asymmetric crystals (alfa != 0). Correct folded form: see Guigay & Ferrero 2016 eq. 31
         # and _equation24_2016 (which was already written correctly this way).
         v = numpy.linspace(0, a, self._integration_points)
-        y = numpy.zeros_like(v, dtype=complex)
         qe = q * self._R / (self._R - q * mu1 - g * q)
         be = 1 / qe + 1 / pe
         invle = 1 / (pe + qe) + g / self._R
@@ -1203,23 +1268,16 @@ class LaueCrystalFocusing():
         # even in v for any fixed (x - x_c).
         xc = self._xc_equation31(q, mu1=mu1, g=g, pe=pe, omega=omega, t1=t1, teta1=teta1,
                                  gamma=gamma, a=a, a2=a2)
-        for i in range(v.size):
-            yprime = acmax * (1 - (v[i] / a) ** 2)
 
-            if alfa == 0:
-                Z = k * numpy.sqrt(chih2) / numpy.sin(2 * teta)
-                kum = BesselJ(0, Z * numpy.sqrt(a ** 2 - v[i] ** 2))
-            else:
-                if self._use_fast_hyp1f1:
-                    kum = fast_hyp1f1(kap, yprime)
-                else:
-                    kum = mpmath.hyp1f1(1j * kap, 1, 1j * yprime)
-
-            Q1 = 1j * k * 0.5 * v[i] ** 2 * invle
-            # FIX (bug #1, 2026): absorption -1j*kiny INSIDE the cosine (folded [0, a] form).
-            # 2026: the lateral argument uses (x - xc) so the field is expressed vs the true x.
-            Q3 = k * v[i] * ((x - xc) / (q * pe * be) - 1j * kiny)
-            y[i] = kum * numpy.exp(Q1) * numpy.cos(Q3)
+        # FEATURE (2026): vectorized over v; for use_fast_hyp1f1=2 the influence function is cached per grid, so a
+        # q-scan or a 2D map evaluates the Kummer function only once for all its points.
+        kum = self._influence_values(v, a=a, alfa=alfa, k=k, teta=teta, chih2=chih2,
+                                      acrist=acrist, gamma=gamma, kap=kap)
+        Q1 = 1j * k * 0.5 * v ** 2 * invle
+        # FIX (bug #1, 2026): absorption -1j*kiny INSIDE the cosine (folded [0, a] form).
+        # 2026: the lateral argument uses (x - xc) so the field is expressed vs the true x.
+        Q3 = k * v * ((x - xc) / (q * pe * be) - 1j * kiny)
+        y = kum * numpy.exp(Q1) * numpy.cos(Q3)
 
         # FIX (bug #1, 2026): factor 2 because the integral is folded onto [0, a].
         amplitude = 2 * numpy.trapezoid(y, x=v)
