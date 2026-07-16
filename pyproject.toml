@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wofryimpl"
+version = "1.0.38"
+description = "WOFRY (Wave Optics FRamework in pYthon) standard implementation"
+readme = "README.rst"
+license = "GPL-3.0-or-later"
+# license-files = ["LICENSE"]   # <- uncomment if a LICENSE file exists in the repo
+authors = [
+    { name = "Manuel Sanchez del Rio", email = "srio@esrf.eu" },
+    { name = "Luca Rebuffi", email = "lrebuffi@anl.gov" },
+]
+maintainers = [
+    { name = "Manuel Sanchez del Rio", email = "srio@esrf.eu" },
+]
+keywords = [
+    "dictionary",
+    "glossary",
+    "synchrotron",
+    "simulation",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: Plugins",
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+]
+dependencies = [
+    "wofry>=1.0.36",
+    "pySRU>=0.5.5",
+    "oasys-barc4ro>=2026.7.16",
+    "dabax",
+    "numba",
+]
+
+[project.urls]
+Homepage = "https://github.com/oasys-kit/wofryimpl"
+Download = "https://github.com/oasys-kit/wofryimpl"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
