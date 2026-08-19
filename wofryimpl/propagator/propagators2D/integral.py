@@ -115,9 +115,10 @@ class Integral2D(Propagator2D):
 
         output_wavefront = GenericWavefront2D.initialize_wavefront_from_arrays(det_x,det_y,amplitude_propagated)
 
-        # added srio@esrf.eu 2018-03-23 to conserve energy - TODO: review method!
-        output_wavefront.rescale_amplitude( numpy.sqrt(wavefront.get_intensity().sum() /
-                                                    output_wavefront.get_intensity().sum()))
+        # Analytical normalization of the discretized 2D Huygens-Fresnel sum
+        # U = 1/(i lambda) * sum U e^{ikr}/r dx dy (the 1/r decay and the carrier
+        # e^{ikz} are already contained in the kernel).
+        output_wavefront.rescale_amplitude( (p_x[1] - p_x[0]) * (p_y[1] - p_y[0]) / (1j * wavelength) )
 
         return output_wavefront
 

@@ -1,5 +1,6 @@
 """
-FresnelConvolution1D — 1-D near-field Fresnel propagator using direct spatial-domain convolution (scipy.signal.fftconvolve).
+FresnelConvolution1D — 1-D near-field Fresnel propagator using direct spatial-domain convolution (numpy.convolve),
+with analytical normalization (amplitude factor e^{ikz}/sqrt(i lambda z) and integration measure delta_x).
 """
 import numpy
 
@@ -38,7 +39,7 @@ class FresnelConvolution1D(Propagator1D):
         Returns
         -------
         GenericWavefront1D
-            Propagated wavefront with energy-conserving normalisation applied.
+            Propagated wavefront with analytical normalization applied.
         """
         # instead of numpy.convolve, this can be used:
         # from scipy.signal import fftconvolve
@@ -49,14 +50,13 @@ class FresnelConvolution1D(Propagator1D):
 
         kernel = numpy.exp(1j*2*numpy.pi/wavefront.get_wavelength() * wavefront.get_abscissas()**2 / 2 / propagation_distance)
         kernel *= numpy.exp(1j*2*numpy.pi/wavefront.get_wavelength() * propagation_distance)
-        kernel /=  1j * wavefront.get_wavelength() * propagation_distance
+        # 1D amplitude factor 1/sqrt(i lambda z) (the 2D one is 1/(i lambda z))
+        kernel /=  numpy.sqrt(1j * wavefront.get_wavelength() * propagation_distance)
         tmp = numpy.convolve(wavefront.get_complex_amplitude(),kernel,mode='same')
+        # integration measure delta_x of the discretized convolution integral
+        tmp *= wavefront.delta()
 
         wavefront_out =  GenericWavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(tmp,
                                     wavefront.offset(), wavefront.delta()))
-
-        # added srio@esrf.eu 2018-03-23 to conserve energy - TODO: review method!
-        wavefront_out.rescale_amplitude( numpy.sqrt(wavefront.get_intensity().sum() /
-                                                    wavefront_out.get_intensity().sum()))
 
         return wavefront_out

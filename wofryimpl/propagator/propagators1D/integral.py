@@ -67,13 +67,10 @@ class Integral1D(Propagator1D):
                                                                                                 detector_abscissas[0],
                                                                                                 detector_abscissas[1]-detector_abscissas[0]))
 
-        # added srio@esrf.eu 2018-03-23 to conserve energy - TODO: review method!
-        # wavefront_out.rescale_amplitude( numpy.sqrt(wavefront.get_intensity().sum() /
-        #                                             wavefront_out.get_intensity().sum()
-        #                                             / magnification_x))
-
-        wavefront_out.rescale_amplitude( (1/numpy.sqrt(1j*wavefront.get_wavelength()*propagation_distance))*(x1[1]-x1[0]) * \
-                                         numpy.exp(1j * wavenumber * propagation_distance))
-
+        # Analytical normalization of the discretized 1D Fresnel-Kirchhoff sum:
+        # amplitude factor 1/sqrt(i lambda z) and integration measure delta_x.
+        # Note that the carrier phase e^{ikz} must NOT be applied here because it
+        # is already contained in the kernel e^{ikr}, r = sqrt((x-x')^2 + z^2).
+        wavefront_out.rescale_amplitude( (1/numpy.sqrt(1j*wavefront.get_wavelength()*propagation_distance))*(x1[1]-x1[0]) )
 
         return wavefront_out

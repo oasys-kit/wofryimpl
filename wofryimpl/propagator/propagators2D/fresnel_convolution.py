@@ -73,7 +73,10 @@ class FresnelConvolution2D(Propagator2D):
         kernel = numpy.exp(1j*2*numpy.pi/wavefront.get_wavelength() *
                            (X**2 + Y**2) / 2 / propagation_distance)
         kernel *= numpy.exp(1j*2*numpy.pi/wavefront.get_wavelength() * propagation_distance)
+        # 2D amplitude factor 1/(i lambda z)
         kernel /=  1j * wavefront.get_wavelength() * propagation_distance
+
+        delta = wavefront.delta()
 
         wavefront_out = GenericWavefront2D.initialize_wavefront_from_arrays(x_array=wavefront.get_coordinate_x(),
                                                                             y_array=wavefront.get_coordinate_y(),
@@ -81,8 +84,7 @@ class FresnelConvolution2D(Propagator2D):
                                                                                                 kernel,
                                                                                                 mode='same'),
                                                                             wavelength=wavelength)
-        # added srio@esrf.eu 2018-03-23 to conserve energy - TODO: review method!
-        wavefront_out.rescale_amplitude( numpy.sqrt(wavefront.get_intensity().sum() /
-                                                    wavefront_out.get_intensity().sum()))
+        # integration measure delta_x delta_y of the discretized convolution integral
+        wavefront_out.rescale_amplitude(delta[0] * delta[1])
 
         return wavefront_out

@@ -61,14 +61,6 @@ class Fraunhofer2D(Propagator2D):
         if propagation_distance < far_field_distance:
             print("WARNING: Fraunhoffer diffraction valid for distances > > half_max_aperture^2/lambda = %f m (propagating at %4.1f)"%
                         (far_field_distance,propagation_distance))
-        #
-        #compute Fourier transform
-        #
-        F1 = numpy.fft.fft2(wavefront.get_complex_amplitude())  # Take the fourier transform of the image.
-        # Now shift the quadrants around so that low spatial frequencies are in
-        # the center of the 2D fourier transformed image.
-        F2 = numpy.fft.fftshift( F1 )
-
         # frequency for axis 1
         shape = wavefront.size()
         delta = wavefront.delta()
@@ -92,9 +84,16 @@ class Fraunhofer2D(Propagator2D):
 
         P1 = numpy.exp(1.0j * wavenumber * propagation_distance)
         P2 = numpy.exp(1.0j * wavenumber / 2 / propagation_distance * fsq)
+        # 2D amplitude factor i lambda z
         P3 = 1.0j * wavelength * propagation_distance
 
-        F1 = numpy.fft.fft2(wavefront.get_complex_amplitude())  # Take the fourier transform of the image.
+        # ifftshift moves the array origin (x=y=0, at the center of the window) to
+        # index (0,0) as assumed by numpy.fft.fft2; without it the output acquires
+        # an alternating (-1)^(m+n) phase (invisible in intensity, wrong in phase).
+        # The factor delta[0]*delta[1] is the integration measure of the discretized
+        # Fourier transform; with it the normalization is analytical (energy is
+        # conserved exactly, by Parseval's theorem)
+        F1 = numpy.fft.fft2(numpy.fft.ifftshift(wavefront.get_complex_amplitude())) * delta[0] * delta[1]
         #  Now shift the quadrants around so that low spatial frequencies are in
         # the center of the 2D fourier transformed image.
         F1 *= P1
@@ -110,10 +109,5 @@ class Fraunhofer2D(Propagator2D):
                                                                             y_array=y2,
                                                                             z_array=F2,
                                                                             wavelength=wavelength)
-
-
-        # added srio@esrf.eu 2018-03-23 to conserve energy - TODO: review method!
-        wavefront_out.rescale_amplitude( numpy.sqrt(wavefront.get_intensity().sum() /
-                                                    wavefront_out.get_intensity().sum()))
 
         return wavefront_out

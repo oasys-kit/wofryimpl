@@ -61,20 +61,33 @@ class Fraunhofer1D(Propagator1D):
             x2 = x2 - 0.5 * numpy.abs(x2[1] - x2[0])
 
 
+        # check far-field (Fraunhofer) validity; the window size is used as an
+        # upper bound of the support of the field
+        x1 = wavefront.get_abscissas()
+        half_max_aperture = 0.5 * (x1[-1] - x1[0])
+        far_field_distance = half_max_aperture**2 / wavelength
+        if propagation_distance < far_field_distance:
+            print("WARNING: Fraunhofer diffraction valid for distances > > half_max_aperture^2/lambda = %f m (propagating at %4.1f)"%
+                        (far_field_distance,propagation_distance))
+
         p1 = numpy.exp(1.0j * wavenumber * propagation_distance)
         p2 = numpy.exp(1.0j * wavenumber / 2 / propagation_distance * x2**2)
-        p3 = 1.0j*wavelength*propagation_distance
+        # 1D amplitude factor sqrt(i lambda z) (the 2D one is i lambda z)
+        p3 = numpy.sqrt(1.0j*wavelength*propagation_distance)
 
-        fft = numpy.fft.fft(wavefront.get_complex_amplitude())
-        fft = fft * p1 * p2 / p3
+        # ifftshift moves the array origin (x=0, at the center of the window) to
+        # index 0 as assumed by numpy.fft.fft; without it the output acquires an
+        # alternating (-1)^m phase (invisible in intensity, wrong in phase).
+        # The factor delta is the integration measure of the discretized Fourier
+        # transform; with it the normalization is analytical (energy is conserved
+        # exactly, by Parseval's theorem)
+        fft = numpy.fft.fft(numpy.fft.ifftshift(wavefront.get_complex_amplitude())) * delta
+        # shift the transform (zero frequency to the center); p2 is defined on the
+        # shifted (monotonic) coordinates x2, so it is applied after the shift
         fft2 = numpy.fft.fftshift(fft)
+        fft2 = fft2 * p1 * p2 / p3
 
         wavefront_out =  GenericWavefront1D.initialize_wavefront_from_arrays(x2, fft2, wavelength=wavefront.get_wavelength())
-
-
-        # added srio@esrf.eu 2018-03-23 to conserve energy - TODO: review method!
-        wavefront_out.rescale_amplitude( numpy.sqrt(wavefront.get_intensity().sum() /
-                                                    wavefront_out.get_intensity().sum()))
 
         return wavefront_out
 
