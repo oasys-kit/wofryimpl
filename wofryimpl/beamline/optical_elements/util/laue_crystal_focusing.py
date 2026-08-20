@@ -32,6 +32,11 @@ Conventions and units
 """
 
 import numpy
+
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid  # numpy < 2.0 has no numpy.trapezoid
 import mpmath
 import scipy
 import time
@@ -912,7 +917,7 @@ class LaueCrystalFocusing():
         Q2 = k * v * ((x - xc) / q - 1j * kiny)
         y = kum * numpy.exp(Q1) * numpy.cos(Q2)
 
-        return 2 * numpy.trapezoid(y, x=v) * numpy.sqrt(att / numpy.abs(lambda1 * q))
+        return 2 * trapezoid(y, x=v) * numpy.sqrt(att / numpy.abs(lambda1 * q))
 
 ########################################
     # Guigay&Ferrero 2016: calculate integral in equation 28 for q=0 with a given wavefront amplitude defined at p=0
@@ -968,7 +973,7 @@ class LaueCrystalFocusing():
         A = f_mag(tau) * numpy.exp(1j * f_phase(tau))
         y = A * kum * numpy.exp(Q1 + Q2 + Q3 + Q4)
 
-        amplitude = numpy.trapezoid(y, x=tau)
+        amplitude = trapezoid(y, x=tau)
         return amplitude
 
     # for rocking curve...
@@ -1049,7 +1054,7 @@ class LaueCrystalFocusing():
             A = numpy.exp(Q1 + Q2)
             amplitude[i] = A * kum * numpy.exp(1j * k * x * inclination)
 
-        amplitude = numpy.trapezoid(amplitude, x=X)
+        amplitude = trapezoid(amplitude, x=X)
         return amplitude
 
     def _equationXX_2016_vectorized(self, THETA,
@@ -1115,7 +1120,7 @@ class LaueCrystalFocusing():
 
         AMPLITUDE_INTEGRATED = numpy.zeros_like(THETA, dtype=complex)
         for i, inclination in enumerate(THETA):
-            AMPLITUDE_INTEGRATED[i] = numpy.trapezoid(amplitude * numpy.exp(1j * k * X * inclination), x=X)
+            AMPLITUDE_INTEGRATED[i] = trapezoid(amplitude * numpy.exp(1j * k * X * inclination), x=X)
         return AMPLITUDE_INTEGRATED
         # amplitude_integrated = numpy.trapz(amplitude, x=X)
         # return amplitude_integrated
@@ -1186,7 +1191,7 @@ class LaueCrystalFocusing():
         # FIX (bug #5, 2026): eq30 was missing the normal-absorption factor (it carries no chi0/att
         # term). Multiply by sqrt(att) [amplitude form of att = exp(-k*(t1+t2)/2*Im chi0)] so |.|^2
         # carries the absorption, consistent with eq23/24/31. att is gated by apply_absorption.
-        return numpy.trapezoid(y, x=v) * numpy.sqrt(att)
+        return trapezoid(y, x=v) * numpy.sqrt(att)
 
     def _xc_equation31(self, q, mu1=None, g=None, pe=None, omega=None, t1=None, teta1=None,
                        gamma=None, a=None, a2=None, **kwargs):
@@ -1280,7 +1285,7 @@ class LaueCrystalFocusing():
         y = kum * numpy.exp(Q1) * numpy.cos(Q3)
 
         # FIX (bug #1, 2026): factor 2 because the integral is folded onto [0, a].
-        amplitude = 2 * numpy.trapezoid(y, x=v)
+        amplitude = 2 * trapezoid(y, x=v)
 
         # FIX (bug #5, 2026): restore the gamma factor of GF2016 eq. 31 / paper eq. 25
         # [prefactor = gamma * sqrt(att/(lambda*q*p*Be)), with Be = 1/be]. It was missing, so the
