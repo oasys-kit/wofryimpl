@@ -256,14 +256,17 @@ class LaueCrystalFocusing():
         braggAngle : float
             Bragg angle in radians.
         chi0 : complex
-            Conjugate of the mean susceptibility chi_0 (so that Im(chi0) > 0 and
-            the normal-absorption factor att decays in the GF2016 convention).
+            Conjugate of the mean susceptibility chi_0 (Im(chi0) > 0).
         chiH : complex
-            The h susceptibility chi_h (as computed, NOT conjugated).
+            Conjugate of the h susceptibility chi_h.
         chiHbar : complex
-            The -h susceptibility chi_{-h} = chi_hbar (as computed). The product
-            chiH*chiHbar then has Im > 0 for Si, matching the reference values,
-            so no conjugation is needed when forming chih2 = chi_h*chi_hbar.
+            Conjugate of the -h susceptibility chi_{-h} = chi_hbar.
+
+        xraylib returns the structure factors in the exp(+i omega t) convention
+        (International Tables), while the propagator of Guigay and Ferrero is
+        written in exp(-i omega t). chi_0, chi_h and chi_hbar must therefore all
+        be conjugated; the product chiH*chiHbar then has Im < 0 for Si (as in
+        Table 1 of Guigay & Sanchez del Rio 2022).
         """
         #
         # get crystal data for silicon crystal
@@ -330,10 +333,9 @@ class LaueCrystalFocusing():
         if self._verbose: print("chiH: (%e , %e)" % (chiH.real, chiH.imag))
         if self._verbose: print("chiHbar: (%e , %e)" % (chiHbar.real, chiHbar.imag))
 
-        # chi0 is conjugated so that the NORMAL-absorption factor att = exp[-k(t1+t2)/2*Im chi0]
-        # decays (raw Im(chi0) < 0 in this xraylib convention). chiH and chiHbar (= chi_{-h}) are
-        # returned as computed, so that chih2 = chiH*chiHbar reproduces the reference product directly
-        # (Im > 0 for Si) with no conjugate "fix" needed downstream.
+        # FIX (2026-10): chi0, chiH and chiHbar are all conjugated, to pass from the exp(+iwt) convention
+        # of xraylib to the exp(-iwt) convention of the propagator. Previously only chi0 was conjugated,
+        # a mixed set giving Im(chiH*chiHbar) > 0 for Si (see paper-structure-factor).
         # FIX (bug #7, 2026): cast to plain python scalars. The structure factors may come out of
         # the materials library as 1-element numpy arrays; downstream these reached
         # mpmath.hyp1f1 (via kap = Omega/A), which raises "TypeError: cannot create mpf from
@@ -342,7 +344,7 @@ class LaueCrystalFocusing():
         chi0 = complex(numpy.asarray(chi0).ravel()[0])
         chiH = complex(numpy.asarray(chiH).ravel()[0])
         chiHbar = complex(numpy.asarray(chiHbar).ravel()[0])
-        return braggAngle, numpy.conjugate(chi0), chiH, chiHbar
+        return braggAngle, numpy.conjugate(chi0), numpy.conjugate(chiH), numpy.conjugate(chiHbar)
 
     # FEATURE (2026): vectorized influence function with per-instance caching.
     def _influence_on_grid(self, v, a=None, alfa=None, k=None, teta=None, chih2=None,
@@ -1327,14 +1329,9 @@ class LaueCrystalFocusing():
         teta, chizero, chih, chimh = self.get_crystal_data()
 
         lambda1 = codata.h * codata.c / codata.e / (photon_energy_in_keV * 1e3) * 1e3  # in mm
-        # CONVENTION (2026): chih2 = chi_h * chi_hbar directly, with chih = chi_h and chimh = chi_{-h}
-        # the (un-conjugated) Fourier coefficients from get_crystal_data() -- chi_{-h} is the real (-h)
-        # structure factor, NOT a "-1j*chi_h" shortcut. For Si this product has Im(chi_h*chi_hbar) > 0,
-        # equal to GF2013's caption value (+3.26e-12) and to paper2013.py, with NO conjugate fix.
-        # (Only chi0 is returned conjugated, so the normal-absorption factor att decays; that is
-        # independent of this product. The sign of Im(chi_h*chi_hbar) sets the Borrmann branch / which
-        # +/-q focus is enhanced -- visible only at strong absorption, e.g. GF2013 Fig. 6 at 8.3 keV;
-        # GSdR2022 Table 1 uses the opposite sign convention.)
+        # CONVENTION (2026-10): chih2 = chi_h * chi_hbar, with chih and chimh the conjugated (exp(-iwt))
+        # Fourier coefficients from get_crystal_data(). For Si Im(chi_h*chi_hbar) < 0, as in GSdR2022
+        # Table 1. (GF2013 quotes +3.26e-12 at 8.3 keV, the exp(+iwt) value, mixed with exp(-iwt) formulas.)
         chih2 = chih * chimh
         if self._chih2 is not None: chih2 = self._chih2  # FEATURE (2026): user-supplied override
 
@@ -1479,14 +1476,9 @@ class LaueCrystalFocusing():
         teta, chizero, chih, chimh = self.get_crystal_data()
 
         lambda1 = codata.h * codata.c / codata.e / (photon_energy_in_keV * 1e3) * 1e3  # in mm
-        # CONVENTION (2026): chih2 = chi_h * chi_hbar directly, with chih = chi_h and chimh = chi_{-h}
-        # the (un-conjugated) Fourier coefficients from get_crystal_data() -- chi_{-h} is the real (-h)
-        # structure factor, NOT a "-1j*chi_h" shortcut. For Si this product has Im(chi_h*chi_hbar) > 0,
-        # equal to GF2013's caption value (+3.26e-12) and to paper2013.py, with NO conjugate fix.
-        # (Only chi0 is returned conjugated, so the normal-absorption factor att decays; that is
-        # independent of this product. The sign of Im(chi_h*chi_hbar) sets the Borrmann branch / which
-        # +/-q focus is enhanced -- visible only at strong absorption, e.g. GF2013 Fig. 6 at 8.3 keV;
-        # GSdR2022 Table 1 uses the opposite sign convention.)
+        # CONVENTION (2026-10): chih2 = chi_h * chi_hbar, with chih and chimh the conjugated (exp(-iwt))
+        # Fourier coefficients from get_crystal_data(). For Si Im(chi_h*chi_hbar) < 0, as in GSdR2022
+        # Table 1. (GF2013 quotes +3.26e-12 at 8.3 keV, the exp(+iwt) value, mixed with exp(-iwt) formulas.)
         chih2 = chih * chimh
         if self._chih2 is not None: chih2 = self._chih2  # FEATURE (2026): user-supplied override
 
@@ -1625,14 +1617,9 @@ class LaueCrystalFocusing():
         teta, chizero, chih, chimh = self.get_crystal_data()
 
         lambda1 = codata.h * codata.c / codata.e / (photon_energy_in_keV * 1e3) * 1e3  # in mm
-        # CONVENTION (2026): chih2 = chi_h * chi_hbar directly, with chih = chi_h and chimh = chi_{-h}
-        # the (un-conjugated) Fourier coefficients from get_crystal_data() -- chi_{-h} is the real (-h)
-        # structure factor, NOT a "-1j*chi_h" shortcut. For Si this product has Im(chi_h*chi_hbar) > 0,
-        # equal to GF2013's caption value (+3.26e-12) and to paper2013.py, with NO conjugate fix.
-        # (Only chi0 is returned conjugated, so the normal-absorption factor att decays; that is
-        # independent of this product. The sign of Im(chi_h*chi_hbar) sets the Borrmann branch / which
-        # +/-q focus is enhanced -- visible only at strong absorption, e.g. GF2013 Fig. 6 at 8.3 keV;
-        # GSdR2022 Table 1 uses the opposite sign convention.)
+        # CONVENTION (2026-10): chih2 = chi_h * chi_hbar, with chih and chimh the conjugated (exp(-iwt))
+        # Fourier coefficients from get_crystal_data(). For Si Im(chi_h*chi_hbar) < 0, as in GSdR2022
+        # Table 1. (GF2013 quotes +3.26e-12 at 8.3 keV, the exp(+iwt) value, mixed with exp(-iwt) formulas.)
         chih2 = chih * chimh
         if self._chih2 is not None: chih2 = self._chih2  # FEATURE (2026): user-supplied override
 
