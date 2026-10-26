@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wofryimpl"
-version = "1.0.39"
+version = "1.0.40"
 description = "WOFRY (Wave Optics FRamework in pYthon) standard implementation"
 readme = "README.rst"
 license = "GPL-3.0-or-later"
@@ -37,7 +37,7 @@ classifiers = [
 ]
 dependencies = [
     "wofry>=1.0.36",
-    "pySRU>=0.5.5",
+    "pySRU>=0.5.6",
     "oasys-barc4ro>=2026.7.16",
     "dabax",
     "numba",
