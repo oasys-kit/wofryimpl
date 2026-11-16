@@ -186,7 +186,12 @@ class LaueCrystalFocusing():
                 Radius of curvature in mm (positive: source faces the convex
                 side, per GF2016). Use a large value for a flat crystal.
             poisson_ratio : float
-                Poisson ratio nu of the (isotropic) crystal; enters rho=nu/(1-nu).
+                Elastic factor of the (isotropic) crystal: the coefficient rho of z**2 in the
+                displacement u_z = (x**2 + rho z**2)/(2R) [K in Nesterets & Wilkins 2008; rho in
+                Guigay & Ferrero 2016, eq. 16]. NOTE: despite its name, this value is used
+                directly as rho; it is NOT converted with rho = nu/(1-nu). For a plate in plane
+                strain rho = nu/(1-nu), nu being the Poisson ratio (e.g. nu = 0.1804 gives the
+                default rho = 0.2201 of Nesterets & Wilkins for silicon).
             photon_energy_in_keV : float
                 Photon energy in keV.
             thickness : float
@@ -691,15 +696,18 @@ class LaueCrystalFocusing():
 
 
         # interpolator
-        f_mag = interpolate.interp1d(Phi_tau, numpy.abs(Phi), kind='linear', bounds_error=False, fill_value=0)
-        f_phase = interpolate.interp1d(Phi_tau, numpy.angle(Phi), kind='linear', bounds_error=False, fill_value=0)
+        # FIX (2026-11): interpolate the real and imaginary parts of the incident field. The former
+        # interpolation of modulus and wrapped phase is wrong across every 2 pi wrap of the phase.
+        Phi = numpy.asarray(Phi, dtype=complex)
+        f_re = interpolate.interp1d(Phi_tau, Phi.real, kind='linear', bounds_error=False, fill_value=0)
+        f_im = interpolate.interp1d(Phi_tau, Phi.imag, kind='linear', bounds_error=False, fill_value=0)
 
         print(f"Progress: 0%")
         for j in range(xx.size):
             progress = (j + 1) / xx.size * 100
             if progress % 10 == 0:  print(f"Progress: {progress:.0f}%")
             # amplitude = self._equation28_2016(xx[j], Phi, Phi_tau, **kwds)
-            amplitude = self._equation28_2016(xx[j], f_mag, f_phase, **kwds)
+            amplitude = self._equation28_2016(xx[j], f_re, f_im, **kwds)
             yy_amplitude[j] = amplitude
         print(f"Progress: 100%")
 
@@ -925,7 +933,7 @@ class LaueCrystalFocusing():
     # Guigay&Ferrero 2016: calculate integral in equation 28 for q=0 with a given wavefront amplitude defined at p=0
     # note that the integral limits are gamma (u+-a) and the integrand is Phi(tau) P(u,tau) with Phi() the complex amplitude
     def _equation28_2016(self, x,
-                        f_mag, f_phase, # interpolator
+                        f_re, f_im, # interpolators of the real and imaginary parts of the incident field
                         a       = None,
                         mu1     = None,
                         mu2     = None,
@@ -954,8 +962,9 @@ class LaueCrystalFocusing():
         Evaluate GF2016 eq. 28 for q = 0 with an arbitrary incident field: the
         exit amplitude at ``x`` is the integral over the entrance coordinate tau
         in [gamma(x-a), gamma(x+a)] of Phi(tau) * P(x, tau), with the incident
-        field supplied as the interpolators ``f_mag`` and ``f_phase`` (modulus
-        and phase versus tau). Remaining keyword arguments are the precomputed
+        field supplied as the interpolators ``f_re`` and ``f_im`` (real and
+        imaginary parts versus tau). The normal-absorption factor sqrt(att) is
+        applied, as in eqs. 23, 24, 30 and 31. Remaining keyword arguments are the precomputed
         constants. Returns the complex amplitude D_h(x).
         """
         tau = numpy.linspace(gamma * (x - a), gamma * (x + a), self._integration_points)
@@ -970,12 +979,15 @@ class LaueCrystalFocusing():
 
         Q1 = 1j * k * nu * omega
         Q2 = -1j * k * (mu1 * x**2 + x * t1 * numpy.sin(teta1)) / (2 * self._R)
-        Q3 = -1j * k * (mu2 * (nu - x)**2 - a2 * gamma * (nu - x)) / (2 * self._R)
+        # FIX (2026-11): the term -mu2*tau^2/(2R) of S_P, with tau = gamma*(x - nu), carries gamma**2
+        # (it was missing here; eq. 30 has it through gamma**2*(x-v)**2/(2*pe)).
+        Q3 = -1j * k * (mu2 * gamma**2 * (nu - x)**2 - a2 * gamma * (nu - x)) / (2 * self._R)
         Q4 = 1j * k * (g / self._R) * (a + x) * (nu - x)
-        A = f_mag(tau) * numpy.exp(1j * f_phase(tau))
+        A = f_re(tau) + 1j * f_im(tau)
         y = A * kum * numpy.exp(Q1 + Q2 + Q3 + Q4)
 
-        amplitude = trapezoid(y, x=tau)
+        # FIX (2026-11): normal absorption (gated by apply_absorption), consistent with eq. 30.
+        amplitude = trapezoid(y, x=tau) * numpy.sqrt(att)
         return amplitude
 
     # for rocking curve...
@@ -1056,7 +1068,8 @@ class LaueCrystalFocusing():
             A = numpy.exp(Q1 + Q2)
             amplitude[i] = A * kum * numpy.exp(1j * k * x * inclination)
 
-        amplitude = trapezoid(amplitude, x=X)
+        # FIX (2026-11): normal absorption (gated by apply_absorption), as in eq. 23.
+        amplitude = trapezoid(amplitude, x=X) * numpy.sqrt(att)
         return amplitude
 
     def _equationXX_2016_vectorized(self, THETA,
@@ -1123,7 +1136,9 @@ class LaueCrystalFocusing():
         AMPLITUDE_INTEGRATED = numpy.zeros_like(THETA, dtype=complex)
         for i, inclination in enumerate(THETA):
             AMPLITUDE_INTEGRATED[i] = trapezoid(amplitude * numpy.exp(1j * k * X * inclination), x=X)
-        return AMPLITUDE_INTEGRATED
+        # FIX (2026-11): normal absorption (gated by apply_absorption), as in eq. 23. It was missing,
+        # so that the profile did not depend on apply_absorption.
+        return AMPLITUDE_INTEGRATED * numpy.sqrt(att)
         # amplitude_integrated = numpy.trapz(amplitude, x=X)
         # return amplitude_integrated
 ########################################
