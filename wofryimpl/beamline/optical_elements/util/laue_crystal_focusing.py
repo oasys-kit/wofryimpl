@@ -1307,7 +1307,9 @@ class LaueCrystalFocusing():
         # FIX (bug #5, 2026): restore the gamma factor of GF2016 eq. 31 / paper eq. 25
         # [prefactor = gamma * sqrt(att/(lambda*q*p*Be)), with Be = 1/be]. It was missing, so the
         # asymmetric (gamma != 1) magnitude was off by gamma; symmetric (gamma = 1) was unaffected.
-        amplitude *= gamma * numpy.sqrt(att / (lambda1 * q * self._p * be))
+        # FIX (2026-11): complex square root. q*p*Be is negative for virtual foci beyond about q = -p,
+        # where the real square root returned NaN.
+        amplitude *= gamma * numpy.sqrt(att / (lambda1 * q * self._p * be) + 0j)
         # omitted phase (see just after equation 30); P_g uses the true x.
         amplitude *= numpy.exp(1j * k * x ** 2 / 2 / q) * \
                      numpy.exp(1j * k * s ** 2 / 2 / self._p) * \
