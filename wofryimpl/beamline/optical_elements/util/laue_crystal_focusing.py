@@ -434,7 +434,36 @@ class LaueCrystalFocusing():
     #
     # interface for q=0 or finite q
     #
-    def xscan(self, q=1000.0, npoints_x=10, a_factor=1, a_center=0.0, filename=""):
+    def lateral_shift(self, q=0.0):
+        """
+        Lateral shift x_c (mm) of the centre of the diffracted pattern at the
+        distance q (mm) for the internal point source at distance p; q = 0 is
+        the exit surface [Guigay & Ferrero 2016, eqs. 25 and 32]. In an
+        asymmetric or bent crystal the pattern is not centred at x = 0.
+        """
+        kwds = self._calculate_constats_for_equation31_2016()
+        if self._p == 0:
+            return 0.0 if q == 0 else float(self._xc_equation24(q, **kwds))
+        if q == 0:
+            return float(self._xc_equation30(**kwds))
+        return float(self._xc_equation31(q, **kwds))
+
+    def _x_grid(self, a, npoints_x, a_factor, a_center, flag_x_window=0, x_half_width=0.1):
+        """
+        Transverse grid (mm) of the x-scans: [-a*a_factor, a*a_factor] if
+        flag_x_window == 0 (relative to the half-width a of the Borrmann fan),
+        [-x_half_width, x_half_width] if flag_x_window == 1 (absolute, mm);
+        shifted by -a_center in both cases.
+        """
+        if flag_x_window == 0:
+            w = a * a_factor
+        elif flag_x_window == 1:
+            w = x_half_width
+        else:
+            raise ValueError("flag_x_window must be 0 (relative to a) or 1 (absolute)")
+        return numpy.linspace(-w, w, npoints_x) - a_center
+
+    def xscan(self, q=1000.0, npoints_x=10, a_factor=1, a_center=0.0, filename="", flag_x_window=0, x_half_width=0.1):
         """
         Transverse intensity/amplitude profile at a fixed distance q, for a
         point source.
@@ -451,11 +480,16 @@ class LaueCrystalFocusing():
             Number of transverse sampling points.
         a_factor : float
             Half-width of the x window in units of a = t1*sin(2 theta_B)/2; the
-            scan spans [-a*a_factor, a*a_factor].
+            scan spans [-a*a_factor, a*a_factor]. Used if flag_x_window == 0.
         a_center : float
             Offset (mm) subtracted from the x grid (to centre on the pattern).
         filename : str
             If non-empty, save the resulting wavefront to this HDF5 file.
+        flag_x_window : int
+            Definition of the x window: 0 = relative, [-a*a_factor, a*a_factor];
+            1 = absolute, [-x_half_width, x_half_width].
+        x_half_width : float
+            Half-width (mm) of the x window when flag_x_window == 1.
 
         Returns
         -------
@@ -484,20 +518,25 @@ class LaueCrystalFocusing():
 
         if self._p == 0:
             if q == 0:
-                out = self.xscan_at_q0_and_p0(npoints_x=npoints_x, a_factor=a_factor, a_center=a_center, filename=filename)
+                out = self.xscan_at_q0_and_p0(npoints_x=npoints_x, a_factor=a_factor, a_center=a_center, filename=filename,
+                    flag_x_window=flag_x_window, x_half_width=x_half_width)
             else:
-                out = self.xscan_at_finite_q_and_p0(q, npoints_x=npoints_x, a_factor=a_factor, a_center=a_center, filename=filename)
+                out = self.xscan_at_finite_q_and_p0(q, npoints_x=npoints_x, a_factor=a_factor, a_center=a_center, filename=filename,
+                    flag_x_window=flag_x_window, x_half_width=x_half_width)
         else:
             if q == 0:
-                out = self.xscan_at_q0(npoints_x=npoints_x, a_factor=a_factor, a_center=a_center, filename=filename)
+                out = self.xscan_at_q0(npoints_x=npoints_x, a_factor=a_factor, a_center=a_center, filename=filename,
+                    flag_x_window=flag_x_window, x_half_width=x_half_width)
             else:
-                out = self.xscan_at_finite_q(q, npoints_x=npoints_x, a_factor=a_factor, a_center=a_center, filename=filename)
+                out = self.xscan_at_finite_q(q, npoints_x=npoints_x, a_factor=a_factor, a_center=a_center, filename=filename,
+                    flag_x_window=flag_x_window, x_half_width=x_half_width)
 
         print("Calculation time: ", time.time() - t0)
         return out
 
     # x-scan at p=q=0 using Guigay % Ferrero 2016 eq 23
-    def xscan_at_q0_and_p0(self, npoints_x=10, a_factor=1, a_center=0.0, filename=""):
+    def xscan_at_q0_and_p0(self, npoints_x=10, a_factor=1, a_center=0.0, filename="",
+            flag_x_window=0, x_half_width=0.1):
         """
         Transverse profile on the exit surface for a point source on the
         entrance surface (p = 0, q = 0), using GF2016 eq. 23. Arguments and
@@ -509,7 +548,7 @@ class LaueCrystalFocusing():
         # x-scan at q=0
         print("a=%.3f mm..." % (a))
 
-        xx = numpy.linspace(-a * a_factor, a * a_factor, npoints_x) - a_center
+        xx = self._x_grid(a, npoints_x, a_factor, a_center, flag_x_window, x_half_width)
 
         # FEATURE (2026): _equation23_2016 is vectorized; evaluate the whole grid at once.
         yy_amplitude = numpy.asarray(self._equation23_2016(xx, **kwds), dtype=complex)
@@ -527,7 +566,8 @@ class LaueCrystalFocusing():
         return xx, yy_amplitude, output_wavefront
 
     # x-scan at p=0, finite q, using Guigay % Ferrero 2016 eq 24
-    def xscan_at_finite_q_and_p0(self, q=1000.0, npoints_x=10, a_factor=1, a_center=0.0, filename=""):
+    def xscan_at_finite_q_and_p0(self, q=1000.0, npoints_x=10, a_factor=1, a_center=0.0, filename="",
+            flag_x_window=0, x_half_width=0.1):
         """
         Transverse profile at a finite distance q for a point source on the
         entrance surface (p = 0), using GF2016 eq. 24. Arguments and return
@@ -538,7 +578,7 @@ class LaueCrystalFocusing():
 
         print("a=%.3f mm..." % (a))
 
-        xx = numpy.linspace(-a * a_factor, a * a_factor, npoints_x) - a_center
+        xx = self._x_grid(a, npoints_x, a_factor, a_center, flag_x_window, x_half_width)
         yy_amplitude = numpy.zeros_like(xx, dtype=complex)
 
         print(f"Progress: 0%")
@@ -563,7 +603,8 @@ class LaueCrystalFocusing():
 
 
     # x-scan at q=0 using Guigay % Ferrero 2016 eq 30
-    def xscan_at_q0(self, npoints_x=10, a_factor=1, a_center=0.0, filename=""):
+    def xscan_at_q0(self, npoints_x=10, a_factor=1, a_center=0.0, filename="",
+            flag_x_window=0, x_half_width=0.1):
         """
         Transverse profile on the exit surface (q = 0) for a point source at a
         finite distance p, using GF2016 eq. 30. Raises if p == 0 (use
@@ -579,7 +620,7 @@ class LaueCrystalFocusing():
         # x-scan at q=0
         print("a=%.3f mm..." % (a))
 
-        xx = numpy.linspace(-a * a_factor, a * a_factor, npoints_x) - a_center
+        xx = self._x_grid(a, npoints_x, a_factor, a_center, flag_x_window, x_half_width)
         yy_amplitude = numpy.zeros_like(xx, dtype=complex)
 
         print(f"Progress: 0%")
@@ -603,7 +644,8 @@ class LaueCrystalFocusing():
         return xx, yy_amplitude, output_wavefront
 
     # x-scan at finite q using Guigay % Ferrero 2016 eq 31
-    def xscan_at_finite_q(self, q=1000.0, npoints_x=10, a_factor=1, a_center=0.0, filename=""):
+    def xscan_at_finite_q(self, q=1000.0, npoints_x=10, a_factor=1, a_center=0.0, filename="",
+            flag_x_window=0, x_half_width=0.1):
         """
         Transverse profile at a finite distance q for a point source at a finite
         distance p, using GF2016 eq. 31. Raises if p == 0 (use
@@ -619,7 +661,7 @@ class LaueCrystalFocusing():
         # x-scan at q=0
         print("a=%.3f mm..." % (a))
 
-        xx = numpy.linspace(-a * a_factor, a * a_factor, npoints_x) - a_center
+        xx = self._x_grid(a, npoints_x, a_factor, a_center, flag_x_window, x_half_width)
         yy_amplitude = numpy.zeros_like(xx, dtype=complex)
 
         print(f"Progress: 0%")
@@ -650,7 +692,9 @@ class LaueCrystalFocusing():
                                      npoints_x=10,
                                      a_factor=1,
                                      a_center=0.0,
-                                     filename=""):
+                                     filename="",
+                                     flag_x_window=0,
+                                     x_half_width=0.1):
         """
         Exit-surface field for an arbitrary incident field (rather than a point
         source), using GF2016 eq. 28: D_h(x) is the integral of the incident
@@ -665,7 +709,7 @@ class LaueCrystalFocusing():
         Phi_tau : ndarray, optional
             Entrance-surface coordinates tau (mm) for ``Phi``; interpolated
             internally. Defaults to the x grid.
-        npoints_x, a_factor, a_center, filename :
+        npoints_x, a_factor, a_center, filename, flag_x_window, x_half_width :
             As in :meth:`xscan`.
 
         Returns
@@ -686,7 +730,7 @@ class LaueCrystalFocusing():
         print("xscan_for_external_wavefront() (Guigay & Ferrero 2016 eq 28 http://dx.doi.org/10.1107/S2053273316006549)")
         print("a=%.3f mm..." % (a))
 
-        xx = numpy.linspace(-a * a_factor, a * a_factor, npoints_x) - a_center
+        xx = self._x_grid(a, npoints_x, a_factor, a_center, flag_x_window, x_half_width)
         yy_amplitude = numpy.zeros_like(xx, dtype=complex)
 
         ##

@@ -2,6 +2,7 @@ import numpy
 
 from syned.beamline.optical_elements.crystals.crystal import Crystal, DiffractionGeometry
 from wofry.beamline.decorators import OpticalElementDecorator
+from wofry.propagator.wavefront1D.generic_wavefront import GenericWavefront1D
 from wofryimpl.beamline.optical_elements.util.laue_crystal_focusing import LaueCrystalFocusing
 
 class WOLaueCrystal1D(Crystal, OpticalElementDecorator):
@@ -18,6 +19,9 @@ class WOLaueCrystal1D(Crystal, OpticalElementDecorator):
                  integration_points=500,
                  npoints_x=100,
                  a_factor=1.0,
+                 flag_x_window=0,  # x window: 0 = [-a*a_factor, a*a_factor], 1 = [-x_half_width, x_half_width]
+                 x_half_width=100e-6,  # m, used if flag_x_window == 1
+                 flag_x_centered=0,  # 0: true coordinate x; 1: window centred on the pattern, abscissas x - x_c (point source only)
                  use_fast_hyp1f1=0,
                  apply_absorption=True,  # FEATURE (2026): pass-through; False reproduces paper2013.py (attsym=1)
                  chih2=None,  # FEATURE (2026): pass-through; if not None, overrides the computed chi_h*chi_hbar
@@ -56,6 +60,9 @@ class WOLaueCrystal1D(Crystal, OpticalElementDecorator):
         self._q = q*1e3 # mm
         self._npoints_x = npoints_x
         self._a_factor  = a_factor
+        self._flag_x_window = flag_x_window
+        self._x_half_width = x_half_width  # m
+        self._flag_x_centered = flag_x_centered
         self._source_flag  = source_flag
 
     def applyOpticalElement(self, wavefront_in, parameters=None, element_index=None):
@@ -66,13 +73,23 @@ class WOLaueCrystal1D(Crystal, OpticalElementDecorator):
                                                                             npoints_x=self._npoints_x,
                                                                             a_factor=self._a_factor,
                                                                             a_center=0.0,
-                                                                            filename="")
+                                                                            filename="",
+                                                                            flag_x_window=self._flag_x_window,
+                                                                            x_half_width=self._x_half_width * 1e3)
         elif self._source_flag == 1: # point source
+            # flag_x_centered == 1: the window is centred on the centre x_c of the diffracted pattern
+            # (lateral shift, GF2016 eqs. 25 and 32) and the abscissas are given as x - x_c.
+            xc = self._LaueCrystalFocusing.lateral_shift(self._q) if self._flag_x_centered else 0.0  # mm
             xx, yy_amplitude, wavefront = self._LaueCrystalFocusing.xscan(self._q,
                                                                           npoints_x=self._npoints_x,
                                                                           a_factor=self._a_factor,
-                                                                          a_center=0.0,
-                                                                          filename="")
+                                                                          a_center=-xc,
+                                                                          filename="",
+                                                                          flag_x_window=self._flag_x_window,
+                                                                          x_half_width=self._x_half_width * 1e3)
+            if self._flag_x_centered:
+                wavefront = GenericWavefront1D.initialize_wavefront_from_arrays(
+                    (xx - xc) * 1e-3, yy_amplitude, wavelength=wavefront.get_wavelength())
         return wavefront
 
     def qscan(self, qmin=0.0, qmax=10.0, qpoints=100):
@@ -107,7 +124,10 @@ class WOLaueCrystal1D(Crystal, OpticalElementDecorator):
         txt += "\n    alfa_deg = %f,  # CAN BE POSITIVE OR NEGATIVE)" % self._LaueCrystalFocusing._alfa_deg
         txt += "\n    integration_points = %d,"                       % self._LaueCrystalFocusing._integration_points
         txt += "\n    npoints_x = %d,"                                % self._npoints_x
-        txt += "\n    a_factor = %f,"                                 % self._a_factor
+        txt += "\n    a_factor = %g,"                                 % self._a_factor
+        txt += "\n    flag_x_window = %d,  # 0: window +-a*a_factor, 1: window +-x_half_width" % self._flag_x_window
+        txt += "\n    x_half_width = %g,  # m"                         % self._x_half_width
+        txt += "\n    flag_x_centered = %d,  # 1: window centred on the pattern, abscissas x - x_c" % self._flag_x_centered
         txt += "\n    use_fast_hyp1f1 = %d,"                          % self._LaueCrystalFocusing._use_fast_hyp1f1
         txt += "\n    apply_absorption = %s,"                         % self._LaueCrystalFocusing._apply_absorption
         txt += "\n    chih2 = %s,"                                    % repr(self._LaueCrystalFocusing._chih2)
