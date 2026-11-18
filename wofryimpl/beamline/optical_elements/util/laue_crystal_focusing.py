@@ -922,6 +922,15 @@ class LaueCrystalFocusing():
 
     # Guigay&Ferrero 2016: calculate equation 24, p=0, finite q
     # 2026: written as a function of the TRUE observation coordinate x (x_c subtracted internally).
+    @staticmethod
+    def _k1(k, chizero, t1, t2, att):
+        """
+        Constant factor K_1 = exp[i k chi_0 (t1 + t2) / 4] of the propagator (paper, equation 2):
+        mean refraction (phase, from Re chi_0) and normal absorption (modulus sqrt(att), from Im chi_0).
+        With apply_absorption=False, att = 1 and only the phase remains (as in eq. 23 and eq. 31).
+        """
+        return numpy.exp(1j * k * numpy.real(chizero) * 0.25 * (t1 + t2)) * numpy.sqrt(att)
+
     def _equation24_2016(self, x, q,
                          a=None,
                          mu1=None,
@@ -971,7 +980,8 @@ class LaueCrystalFocusing():
         Q2 = k * v * ((x - xc) / q - 1j * kiny)
         y = kum * numpy.exp(Q1) * numpy.cos(Q2)
 
-        return 2 * trapezoid(y, x=v) * numpy.sqrt(att / numpy.abs(lambda1 * q))
+        # 2026-11: full K_1 (phase and modulus), as in the paper.
+        return 2 * trapezoid(y, x=v) * self._k1(k, chizero, t1, t2, att) / numpy.sqrt(numpy.abs(lambda1 * q))
 
 ########################################
     # Guigay&Ferrero 2016: calculate integral in equation 28 for q=0 with a given wavefront amplitude defined at p=0
@@ -1031,7 +1041,8 @@ class LaueCrystalFocusing():
         y = A * kum * numpy.exp(Q1 + Q2 + Q3 + Q4)
 
         # FIX (2026-11): normal absorption (gated by apply_absorption), consistent with eq. 30.
-        amplitude = trapezoid(y, x=tau) * numpy.sqrt(att)
+        # 2026-11: full K_1 (phase and modulus), as in the paper.
+        amplitude = trapezoid(y, x=tau) * self._k1(k, chizero, t1, t2, att)
         return amplitude
 
     # for rocking curve...
@@ -1113,7 +1124,8 @@ class LaueCrystalFocusing():
             amplitude[i] = A * kum * numpy.exp(1j * k * x * inclination)
 
         # FIX (2026-11): normal absorption (gated by apply_absorption), as in eq. 23.
-        amplitude = trapezoid(amplitude, x=X) * numpy.sqrt(att)
+        # 2026-11: full K_1 (phase and modulus), as in the paper.
+        amplitude = trapezoid(amplitude, x=X) * self._k1(k, chizero, t1, t2, att)
         return amplitude
 
     def _equationXX_2016_vectorized(self, THETA,
@@ -1182,7 +1194,8 @@ class LaueCrystalFocusing():
             AMPLITUDE_INTEGRATED[i] = trapezoid(amplitude * numpy.exp(1j * k * X * inclination), x=X)
         # FIX (2026-11): normal absorption (gated by apply_absorption), as in eq. 23. It was missing,
         # so that the profile did not depend on apply_absorption.
-        return AMPLITUDE_INTEGRATED * numpy.sqrt(att)
+        # 2026-11: full K_1 (phase and modulus), as in the paper.
+        return AMPLITUDE_INTEGRATED * self._k1(k, chizero, t1, t2, att)
         # amplitude_integrated = numpy.trapz(amplitude, x=X)
         # return amplitude_integrated
 ########################################
@@ -1223,6 +1236,8 @@ class LaueCrystalFocusing():
                         k       = None,
                         att     = None,
                         chih2   = None,
+                        chizero = None,
+                        t2      = None,
                       ):
         """
         Evaluate GF2016 eq. 30: the exit-surface amplitude (q = 0) at the TRUE
@@ -1252,7 +1267,8 @@ class LaueCrystalFocusing():
         # FIX (bug #5, 2026): eq30 was missing the normal-absorption factor (it carries no chi0/att
         # term). Multiply by sqrt(att) [amplitude form of att = exp(-k*(t1+t2)/2*Im chi0)] so |.|^2
         # carries the absorption, consistent with eq23/24/31. att is gated by apply_absorption.
-        return trapezoid(y, x=v) * numpy.sqrt(att)
+        # 2026-11: full K_1 (phase and modulus), as in the paper.
+        return trapezoid(y, x=v) * self._k1(k, chizero, t1, t2, att)
 
     def _xc_equation31(self, q, mu1=None, g=None, pe=None, omega=None, t1=None, teta1=None,
                        gamma=None, a=None, a2=None, **kwargs):
@@ -1653,6 +1669,8 @@ class LaueCrystalFocusing():
             "k"       : k,
             "att"     : att,          # FIX (bug #5, 2026): now returned so eq30 can apply sqrt(att)
             "chih2"   : chih2,
+            "chizero" : chizero,      # 2026-11: with t2, for the full K_1 (phase and modulus) in eq30
+            "t2"      : t2,
             }
 
 
